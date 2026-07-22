@@ -1704,18 +1704,137 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     function startWordGame(container, levelNumber) {
         const LEVELS = [
-            { level: 1, name: "Sevimli Ev", emoji: "🏠", targetCorrect: 3, scoreBase: 50, color: "#CAFFBF", words: [{ word: "KEDİ", clue: "Miyav diyen tüylü evcil dostumuz" }, { word: "KUŞ", clue: "Göklerde uçan, cik cik ötüşen dostumuz" }, { word: "SÜT", clue: "Kemiklerimizi güçlendiren yararlı beyaz içecek" }] },
-            { level: 2, name: "Tatlı Bahçe", emoji: "🌸", targetCorrect: 3, scoreBase: 70, color: "#CAFFBF", words: [{ word: "ARILAR", clue: "Çiçekten çiçeğe uçup bal yapan vızvızlar" }, { word: "GÜL", clue: "Mis kokulu sevimli bahçe çiçeği" }, { word: "AĞAÇ", clue: "Yeşil yapraklı gölge dostumuz" }] },
-            { level: 3, name: "Doğa Gezisi", emoji: "🌲", targetCorrect: 3, scoreBase: 100, color: "#A0C4FF", words: [{ word: "ELMA", clue: "Kırmızı veya yeşil renkli vitaminli ağaç meyvesi" }, { word: "BULUT", clue: "Mavi gökyüzünde süzülen beyaz pamuksu yapılar" }, { word: "KUZU", clue: "Koyunların sevimli, beyaz ve tüylü yavrusu" }] },
-            { level: 4, name: "Şirin Dere", emoji: "💧", targetCorrect: 3, scoreBase: 120, color: "#A0C4FF", words: [{ word: "BALIK", clue: "Derelerde pullarıyla yüzen sevimli dostumuz" }, { word: "ÖRDEK", clue: "Suda vak vak diye yüzen sarı gagalı dost" }, { word: "KAPLUMBAĞA", clue: "Evini sırtında taşıyan yavaş yürüyen dost" }] },
-            { level: 5, name: "Gökyüzü", emoji: "🌤️", targetCorrect: 3, scoreBase: 150, color: "#FDFFB6", words: [{ word: "GÜNEŞ", clue: "Gündüzleri dünyamızı aydınlatan ve ısıtan yıldız" }, { word: "YILDIZ", clue: "Geceleri gökyüzünde ışıl ışıl parıldayan noktalar" }, { word: "ROKET", clue: "Uzay boşluğuna fırlatılan çok hızlı hava taşıtı" }] },
-            { level: 6, name: "Gizemli Gece", emoji: "🌙", targetCorrect: 3, scoreBase: 180, color: "#FDFFB6", words: [{ word: "AYDEDE", clue: "Geceleri gökte gülümseyen parlak tepsi" }, { word: "Fener", clue: "Karanlığı aydınlatan taşınabilir ışık" }, { word: "BAYKUŞ", clue: "Geceleri uyanık durup hu hu diyen kuş" }] },
-            { level: 7, name: "Deniz Altı", emoji: "🐙", targetCorrect: 3, scoreBase: 250, color: "#D8BBFF", words: [{ word: "DENİZ", clue: "Ucu bucağı görünmeyen çok büyük tuzlu su kütlesi" }, { word: "YENGEÇ", clue: "Kıskaçları olan ve yan yan yürüyen deniz kabuklusu" }, { word: "KUMSAL", clue: "Deniz kıyısındaki sıcacık, sarı kumlu alan" }] },
-            { level: 8, name: "Okyanus Kaşifi", emoji: "🐳", targetCorrect: 3, scoreBase: 300, color: "#D8BBFF", words: [{ word: "YUNUS", clue: "Okyanusta neşeyle zıplayan sevimli memeli dost" }, { word: "KÖPEKBALIĞI", clue: "Keskin dişleri olan hızlı yüzücü deniz canlısı" }, { word: "MERCAN", clue: "Denizin altındaki renkli kayalık bitkiler" }] },
-            { level: 9, name: "Uzay Yolu", emoji: "🪐", targetCorrect: 3, scoreBase: 400, color: "#FFADAD", words: [{ word: "GEZEGEN", clue: "Uzayda bir yıldızın etrafında dönen yuvarlak gökcismi" }, { word: "ASTRONOT", clue: "Uzay giysileri giyerek uzayda araştırmalar yapan kaşif" }, { word: "UYDU", clue: "Gezegenlerin çevresinde dönen veya uzaya yollanan araç" }] },
-            { level: 10, name: "Zeka Galaksisi", emoji: "🛸", targetCorrect: 3, scoreBase: 600, color: "#FFC6FF", words: [{ word: "TELESKOP", clue: "Uzaktaki yıldızları yakınlaştıran büyülü mercekli boru" }, { word: "KUYRUKLUYILDIZ", clue: "Uzayda arkasında ışıklı iz bırakarak kayan buz kütlesi" }, { word: "KARADELİK", clue: "Her şeyi içine çeken uzaydaki gizemli boşluk" }] }
+            {
+                level: 1, name: "Sevimli Ev", emoji: "🏠", targetCorrect: 3, scoreBase: 50, color: "#CAFFBF",
+                words: [
+                    { word: "SÜT", clue: "Kemiklerimizi güçlendiren yararlı beyaz içecek" },
+                    { word: "KUŞ", clue: "Göklerde uçan, cik cik ötüşen dostumuz" },
+                    { word: "BAL", clue: "Arıların çiçeklerden toplayıp yaptığı tatlı yiyecek" },
+                    { word: "MUZ", clue: "Sarı renkli, maymunların çok sevdiği tatlı meyve" },
+                    { word: "DUT", clue: "Ağaçta yetişen, tatlı, küçük kırmızı veya beyaz meyve" },
+                    { word: "GÜL", clue: "Bahçede yetişen, mis kokulu kırmızı veya pembe çiçek" },
+                    { word: "YOL", clue: "Arabaların veya yayaların üzerinde yürüdüğü zemin" },
+                    { word: "BOT", clue: "Kışın giydiğimiz su geçirmeyen kalın ayakkabı" }
+                ]
+            },
+            {
+                level: 2, name: "Tatlı Bahçe", emoji: "🌸", targetCorrect: 3, scoreBase: 70, color: "#CAFFBF",
+                words: [
+                    { word: "KEDİ", clue: "Miyav diyen, evde beslediğimiz sevimli tüylü dostumuz" },
+                    { word: "ELMA", clue: "Kırmızı veya yeşil renkli, ısırdığımızda çıtırdayan meyve" },
+                    { word: "AĞAÇ", clue: "Gövdesi odunsu, dallarında yapraklar olan yeşil bitki" },
+                    { word: "KUZU", clue: "Koyunların sevimli, beyaz ve kıvırcık tüylü yavrusu" },
+                    { word: "KAPI", clue: "Odalara girmek için açıp kapattığımız tahta veya metal bölme" },
+                    { word: "MASA", clue: "Üzerinde yemek yediğimiz veya ders çalıştığımız ayaklı eşya" },
+                    { word: "UÇAK", clue: "Gökyüzünde bulutların arasında uçan büyük yolcu taşıtı" },
+                    { word: "SARI", clue: "Muzun, limonun ve Güneş'in rengi olan canlı renk" }
+                ]
+            },
+            {
+                level: 3, name: "Doğa Gezisi", emoji: "🌲", targetCorrect: 3, scoreBase: 100, color: "#A0C4FF",
+                words: [
+                    { word: "BULUT", clue: "Mavi gökyüzünde süzülen beyaz pamuksu su buharı" },
+                    { word: "BALIK", clue: "Denizlerde, göllerde pullarıyla süzülerek yüzen canlı" },
+                    { word: "ÖRDEK", clue: "Suda vak vak diye yüzen, paytak yürüyen sarı gagalı dost" },
+                    { word: "KÖPEK", clue: "Hav hav diyerek evimizi bekleyen sadık dostumuz" },
+                    { word: "LİMON", clue: "Sarı renkli, salatalara sıktığımız ekşi meyve" },
+                    { word: "ÇİÇEK", clue: "Mis kokulu, renkli yaprakları olan bitki süsü" },
+                    { word: "SEPET", clue: "İçine meyve veya oyuncak koyduğumuz sevimli örgü kap" },
+                    { word: "YONCA", clue: "Uğur getirdiğine inanılan sevimli yeşil yapraklı bitki" }
+                ]
+            },
+            {
+                level: 4, name: "Şirin Dere", emoji: "💧", targetCorrect: 3, scoreBase: 120, color: "#A0C4FF",
+                words: [
+                    { word: "GÜNEŞ", clue: "Gündüzleri dünyamızı aydınlatan ve ısıtan dev yıldız" },
+                    { word: "YILDIZ", clue: "Geceleri gökyüzünde ışıl ışıl parıldayan minik noktalar" },
+                    { word: "TAVŞAN", clue: "Havuç yiyen, uzun kulaklı ve çok hızlı zıplayan sevimli hayvan" },
+                    { word: "KİTAP", clue: "İçinde resimler ve güzel hikayeler olan okuma dostu" },
+                    { word: "KALEM", clue: "Defterimize resim çizmek ve yazı yazmak için kullandığımız araç" },
+                    { word: "KAŞIK", clue: "Çorbamızı içmek için kullandığımız metal veya tahta mutfak aleti" },
+                    { word: "DOLAP", clue: "Elbiselerimizi veya oyuncaklarımızı içine koyduğumuz kapaklı mobilya" },
+                    { word: "DEFTER", clue: "Okulda ders notları aldığımız boş çizgili sayfalar bütünü" }
+                ]
+            },
+            {
+                level: 5, name: "Gökyüzü", emoji: "🌤️", targetCorrect: 3, scoreBase: 150, color: "#FDFFB6",
+                words: [
+                    { word: "ARILAR", clue: "Çiçekten çiçeğe uçup kovanlarında bal yapan vızvızlar" },
+                    { word: "ROKET", clue: "Uzay boşluğuna fırlatılan, arkasından ateşler çıkaran hızlı taşıt" },
+                    { word: "FENER", clue: "Karanlık gecelerde önümüzü aydınlatan el ışığı" },
+                    { word: "BAYKUŞ", clue: "Geceleri uyanık duran, kocaman gözleri olan bilge kuş" },
+                    { word: "DENİZ", clue: "Ucu bucağı görünmeyen, mavi renkli dev tuzlu su kütlesi" },
+                    { word: "MERCAN", clue: "Denizlerin altında yaşayan renkli, sert deniz bitkisi" },
+                    { word: "YUNUS", clue: "Denizde taklalar atan, insan dostu akıllı yüzücü canlı" },
+                    { word: "AYDEDE", clue: "Geceleri gökyüzünde bize gülümseyen parlak ışık" }
+                ]
+            },
+            {
+                level: 6, name: "Gizemli Gece", emoji: "🌙", targetCorrect: 3, scoreBase: 180, color: "#FDFFB6",
+                words: [
+                    { word: "SİNCAP", clue: "Meşe palamudu yiyen, ağaçlarda hızlıca tırmanan sevimli kemirgen" },
+                    { word: "KAPLAN", clue: "Sarı-siyah çizgili tüyleri olan büyük ve güçlü kedi" },
+                    { word: "LEOPAR", clue: "Benekli tüyleri olan, ağaç dallarında dinlenen hızlı yırtıcı" },
+                    { word: "ZÜRAFA", clue: "Uzun boynu sayesinde yüksek ağaç dallarındaki yaprakları yiyen canlı" },
+                    { word: "ORMANLAR", clue: "Binlerce ağacın ve vahşi hayvanın bir arada yaşadığı dev yeşil alan" },
+                    { word: "TOPRAK", clue: "Bitkilerin büyümesini sağlayan, üzerinde yürüdüğümüz kahverengi yeryüzü" },
+                    { word: "GÖZLÜK", clue: "Daha iyi görebilmek veya Güneş'ten korunmak için gözümüze taktığımız araç" },
+                    { word: "AYNA", clue: "Karşısına geçtiğimizde kendimizi gördüğümüz parlak cam" }
+                ]
+            },
+            {
+                level: 7, name: "Deniz Altı", emoji: "🐙", targetCorrect: 3, scoreBase: 250, color: "#D8BBFF",
+                words: [
+                    { word: "YENGEÇ", clue: "Kıskaçları olan ve deniz kıyısında yan yan yürüyen canlı" },
+                    { word: "KUMSAL", clue: "Deniz kıyısındaki sıcacık, sarı ve yumuşacık kumlu alan" },
+                    { word: "GEZEGEN", clue: "Güneş'in etrafında dönen Dünya gibi yuvarlak gök cisimleri" },
+                    { word: "PENGUEN", clue: "Kutuplarda yaşayan, uçamayan ama çok iyi yüzen fraklı kuş" },
+                    { word: "PANDALAR", clue: "Bambu yemeyi çok sevdeki, siyah-beyaz renkli sevimli ayılar" },
+                    { word: "PAPATYA", clue: "Sarı göbekli, beyaz yapraklı sevimli kırlangıç çiçeği" },
+                    { word: "KELEBEK", clue: "Renkli kanatlarıyla çiçeklerin üzerinde dans eden sevimli böcek" },
+                    { word: "KANGURU", clue: "Karnındaki kesesinde yavrusunu taşıyarak zıplayan hayvan" }
+                ]
+            },
+            {
+                level: 8, name: "Okyanus Kaşifi", emoji: "🐳", targetCorrect: 3, scoreBase: 300, color: "#D8BBFF",
+                words: [
+                    { word: "PİLOTLAR", clue: "Gökyüzünde uçan uçakları ve helikopterleri güvenle kullanan kişiler" },
+                    { word: "DOKTORLAR", clue: "Hastalandığımızda bizi muayene edip iyileştiren beyaz önlüklü kahramanlar" },
+                    { word: "İTFAİYE", clue: "Yangın çıktığında kırmızı arabasıyla gelip söndüren cesur ekip" },
+                    { word: "PİYANO", clue: "Tuşlarına basarak harika melodiler çaldığımız büyük müzik aleti" },
+                    { word: "ÇİKOLATA", clue: "Kakao çekirdeklerinden yapılan, tatlı ve kahverengi sevimli yiyecek" },
+                    { word: "IŞINLAR", clue: "Güneş'ten veya el fenerinden çıkan düz çizgi şeklindeki ışıklar" },
+                    { word: "ZAMANLAR", clue: "Saatlerin ve günlerin akıp gitmesini belirten kavram" },
+                    { word: "OYUNLAR", clue: "Arkadaşlarımızla eğlenmek için oynadığımız kurallı aktiviteler" }
+                ]
+            },
+            {
+                level: 9, name: "Uzay Yolu", emoji: "🪐", targetCorrect: 3, scoreBase: 400, color: "#FFADAD",
+                words: [
+                    { word: "ASTRONOT", clue: "Uzay giysisi giyerek uzayda araştırmalar yapan cesur insan" },
+                    { word: "UYDULAR", clue: "Dünya'nın etrafında dönerek televizyon ve internet yayını sağlayan araçlar" },
+                    { word: "AHTAPOT", clue: "Denizin derinliklerinde yaşayan sekiz kollu vantuzlu canlı" },
+                    { word: "DİNOZOR", clue: "Milyonlarca yıl önce yaşamış dev gövdeli eski çağ canlıları" },
+                    { word: "OYUNCAK", clue: "Evde eğlenerek oynadığımız bebek, araba veya lego gibi eşyalar" },
+                    { word: "BİLGİSAYAR", clue: "Ödev yaptığımız, oyun oynadığımız ve araştırma yaptığımız ekranlı makine" },
+                    { word: "GÖKKUŞAĞI", clue: "Yağmurdan sonra gökyüzünde beliren yedi renkli sihirli köprü" },
+                    { word: "KARTOPU", clue: "Kışın kar yağdığında ellerimizle yuvarlayıp fırlattığımız kar yuvarlağı" }
+                ]
+            },
+            {
+                level: 10, name: "Zeka Galaksisi", emoji: "🛸", targetCorrect: 3, scoreBase: 600, color: "#FFC6FF",
+                words: [
+                    { word: "TELESKOP", clue: "Gökyüzündeki çok uzaktaki yıldızları ve gezegenleri görmemizi sağlayan araç" },
+                    { word: "KAPLUMBAĞA", clue: "Sırtındaki sert kabuğunu evi gibi taşıyan, yavaş yürüyen canlı" },
+                    { word: "KÖPEKBALIĞI", clue: "Denizlerde yaşayan, keskin dişleri olan büyük ve hızlı balık" },
+                    { word: "KUYRUKLUYILDIZ", clue: "Uzayda arkasından toz ve gaz saçarak parlayan buz kütlesi" },
+                    { word: "KARADELİK", clue: "Uzayda yerçekimi o kadar güçlü olan ve her şeyi içine çeken gizemli yapı" },
+                    { word: "HELİKOPTER", clue: "Tepesindeki pervanesi dönerek dikey uçabilen hava taşıtı" },
+                    { word: "KÜTÜPHANE", clue: "İçinde binlerce hikaye ve bilgi kitabının bulunduğu sessiz oda" },
+                    { word: "BUZDAĞLARI", clue: "Kuzey kutbunda denizin üzerinde yüzen dev buz kütleleri" }
+                ]
+            }
         ];
-
         const cfg = LEVELS[levelNumber - 1];
 
         let correctWordsCount = 0;
@@ -1726,6 +1845,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let currentWordObj = null;
         let spellingProgress = "";
         let usedWordIndices = [];
+        const shuffledWordPool = [...cfg.words].sort(() => Math.random() - 0.5).slice(0, cfg.targetCorrect);
 
         const tabsHTML = LEVELS.map(l => {
             const isUnlocked = isLevelUnlocked(4, l.level);
@@ -1806,7 +1926,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function loadNextWord() {
             let chosenIdx = -1;
-            for (let i = 0; i < cfg.words.length; i++) {
+            for (let i = 0; i < shuffledWordPool.length; i++) {
                 if (!usedWordIndices.includes(i)) {
                     chosenIdx = i;
                     break;
@@ -1819,7 +1939,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             usedWordIndices.push(chosenIdx);
-            currentWordObj = cfg.words[chosenIdx];
+            currentWordObj = shuffledWordPool[chosenIdx];
             spellingProgress = "";
 
             const cl = document.getElementById("word-clue");
