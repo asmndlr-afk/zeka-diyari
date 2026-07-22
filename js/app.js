@@ -1048,9 +1048,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const playfield = document.getElementById("balloon-playfield");
             if (!playfield) return;
 
-            const balloon = document.createElement("div");
-            balloon.className = "balloon-bubble";
-
             let selectedColor;
             let attempts = 0;
             do {
@@ -1069,28 +1066,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 consecutiveColorCount = 1;
             }
 
-            balloon.style.background = `radial-gradient(circle at 30% 30%, #ffffff 0%, ${selectedColor.hex} 40%, rgba(0,0,0,0.3) 100%)`;
-            balloon.style.boxShadow = `inset -5px -5px 12px rgba(0,0,0,0.2), 0 6px 14px rgba(0,0,0,0.15)`;
-            balloon.style.borderColor = selectedColor.hex;
+            const balloon = document.createElement("div");
+            balloon.className = "game-balloon";
             balloon.dataset.color = selectedColor.name;
-
-            const width = playfield.clientWidth || 320;
-            const size = Math.floor(Math.random() * 15) + 60;
-            balloon.style.width = `${size}px`;
-            balloon.style.height = `${size * 1.25}px`;
-
-            const left = Math.random() * (width - size - 20) + 10;
-            balloon.style.left = `${left}px`;
-            balloon.style.bottom = `-${size * 1.3}px`;
-
+            
             const floatDuration = Math.random() * (cfg.speedMax - cfg.speedMin) + cfg.speedMin;
-            balloon.style.animation = `float-up ${floatDuration}s linear forwards`;
+            balloon.style.setProperty("--duration", `${floatDuration}s`);
+            balloon.style.left = `${Math.random() * 80 + 10}%`;
+            
+            balloon.innerHTML = `
+                <svg class="balloon-svg-element" viewBox="0 0 50 70" style="width:100%; height:100%; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.15)); transition: transform 0.1s ease;">
+                    <path d="M25,0 C11,0 0,11 0,25 C0,39 15,50 25,55 C35,50 50,39 50,25 C50,11 39,0 25,0 Z" fill="${selectedColor.hex}" />
+                    <ellipse cx="15" cy="15" rx="4" ry="7" fill="#FFFFFF" opacity="0.4" transform="rotate(-30 15 15)" />
+                    <path d="M25,55 L22,60 L28,60 Z" fill="${selectedColor.hex}" />
+                    <path d="M25,60 C25,64 22,67 25,72" fill="none" stroke="#CBD5E1" stroke-width="2" />
+                </svg>
+            `;
 
-            balloon.addEventListener("mousedown", () => popBalloon(balloon, selectedColor.name));
-            balloon.addEventListener("touchstart", (e) => {
-                e.preventDefault();
+            balloon.addEventListener("mousedown", (e) => {
+                e.stopPropagation();
                 popBalloon(balloon, selectedColor.name);
             });
+            balloon.addEventListener("touchstart", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                popBalloon(balloon, selectedColor.name);
+            }, { passive: false });
 
             playfield.appendChild(balloon);
             balloonElements.push(balloon);
