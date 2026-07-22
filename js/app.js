@@ -2511,16 +2511,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const LEVELS = [
-            { level: 1, name: "Tavşanın Bahçesi", emoji: "🐰", size: 5, scoreBase: 50, color: "#CAFFBF" },
-            { level: 2, name: "Minik Patika", emoji: "🌱", size: 5, scoreBase: 70, color: "#CAFFBF" },
-            { level: 3, name: "Gizli Geçit", emoji: "🥕", size: 6, scoreBase: 100, color: "#A0C4FF" },
-            { level: 4, name: "Yeşil Labirent", emoji: "🌲", size: 6, scoreBase: 120, color: "#A0C4FF" },
-            { level: 5, name: "Büyük Macera", emoji: "🌟", size: 7, scoreBase: 150, color: "#FFD6A5" },
-            { level: 6, name: "Gizemli Yol", emoji: "💎", size: 7, scoreBase: 180, color: "#FFD6A5" },
-            { level: 7, name: "Karışık Patika", emoji: "🔥", size: 8, scoreBase: 200, color: "#D8BBFF" },
-            { level: 8, name: "Kayıp Şehir", emoji: "🏛️", size: 8, scoreBase: 250, color: "#D8BBFF" },
-            { level: 9, name: "Sihirli Geçit", emoji: "⚡", size: 9, scoreBase: 300, color: "#FFC6FF" },
-            { level: 10, name: "Labirent Kralı", emoji: "👑", size: 10, scoreBase: 400, color: "#FFC6FF" }
+            { level: 1, name: "Tavşanın Bahçesi", emoji: "🐰", size: 5, density: 0.18, scoreBase: 50, color: "#CAFFBF" },
+            { level: 2, name: "Minik Patika", emoji: "🌱", size: 5, density: 0.22, scoreBase: 70, color: "#CAFFBF" },
+            { level: 3, name: "Gizli Geçit", emoji: "🥕", size: 6, density: 0.24, scoreBase: 100, color: "#A0C4FF" },
+            { level: 4, name: "Yeşil Labirent", emoji: "🌲", size: 6, density: 0.26, scoreBase: 120, color: "#A0C4FF" },
+            { level: 5, name: "Büyük Macera", emoji: "🌟", size: 7, density: 0.28, scoreBase: 150, color: "#FFD6A5" },
+            { level: 6, name: "Gizemli Yol", emoji: "💎", size: 7, density: 0.30, scoreBase: 180, color: "#FFD6A5" },
+            { level: 7, name: "Karışık Patika", emoji: "🔥", size: 8, density: 0.32, scoreBase: 200, color: "#D8BBFF" },
+            { level: 8, name: "Kayıp Şehir", emoji: "🏛️", size: 8, density: 0.33, scoreBase: 250, color: "#D8BBFF" },
+            { level: 9, name: "Sihirli Geçit", emoji: "⚡", size: 9, density: 0.34, scoreBase: 300, color: "#FFC6FF" },
+            { level: 10, name: "Labirent Kralı", emoji: "👑", size: 10, density: 0.35, scoreBase: 400, color: "#FFC6FF" }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
@@ -2541,7 +2541,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         if ((r === 0 && c === 0) || (r === N - 1 && c === N - 1)) {
                             grid[r].push(0);
                         } else {
-                            grid[r].push(Math.random() < 0.28 ? 1 : 0);
+                            grid[r].push(Math.random() < (cfg.density || 0.28) ? 1 : 0);
                         }
                     }
                 }
@@ -2777,25 +2777,25 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div style="text-align:center; padding:16px 8px;">
                             <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🥕🐰🏆</div>
                             <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Labirent Kaşifi!</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye \${levelNumber} Tamamlandı!</h2>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Labirenti <strong>\${timeElapsed} saniyede</strong> bitirdin!
+                                Labirenti <strong>${timeElapsed} saniyede</strong> bitirdin!
                             </p>
                             
                             <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
                                 <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+\${starsAwarded}</div>
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
                                     <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
                                 </div>
                                 <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+\${scoreAwarded}</div>
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
                                     <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
                                 </div>
                             </div>
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye \${levelNumber + 1}</button>\` : ''}
+                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>\` : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
@@ -3227,17 +3227,17 @@ document.addEventListener("DOMContentLoaded", () => {
             container.innerHTML = `
                 <div class="true-false-game" style="text-align:center; padding:10px 0; user-select:none;">
                     <div class="level-tabs" style="display:flex; gap:4px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px; justify-content:start;">
-                        \${tabsHTML}
+                        ${tabsHTML}
                     </div>
                     <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
                         <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                            Seviye \${cfg.level}: <span style="color:var(--color-primary);">\${cfg.name}</span>
+                            Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
                         </div>
                         <div class="game-lives" id="tf-lives" style="display:flex; gap:4px;">
                             <!-- Hearts -->
                         </div>
                         <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                            Skor: <span style="color:#D97706;">\${score}/\${cfg.targetScore}</span>
+                            Skor: <span style="color:#D97706;">${score}/${cfg.targetScore}</span>
                         </div>
                     </div>
 
@@ -3246,7 +3246,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div class="question-display card glass" style="margin-bottom:30px; padding:30px 15px; border-radius:24px; border:2px solid rgba(0,0,0,0.05); min-height:120px; display:flex; align-items:center; justify-content:center;">
-                        <h3 style="font-size:1.6rem; color:var(--text-main); line-height:1.5;">\${currentQuestion.q}</h3>
+                        <h3 style="font-size:1.6rem; color:var(--text-main); line-height:1.5;">${currentQuestion.q}</h3>
                     </div>
 
                     <div class="decision-container" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; max-width:280px; margin:0 auto 10px;">
@@ -3419,26 +3419,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     container.innerHTML = `
                         <div style="text-align:center; padding:16px 8px;">
                             <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">✅🏆❌</div>
-                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:\${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Zeka Küpü!</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye \${levelNumber} Tamamlandı!</h2>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Zeka Küpü!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Soruları <strong>\${gameTime} saniyede</strong> ve <strong>\${incorrectCount} hata</strong> ile tamamladın!
+                                Soruları <strong>${gameTime} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile tamamladın!
                             </p>
                             
                             <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
                                 <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+\${starsAwarded}</div>
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
                                     <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
                                 </div>
                                 <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+\${scoreAwarded}</div>
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
                                     <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
                                 </div>
                             </div>
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye \${levelNumber + 1}</button>\` : ''}
+                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>\` : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
