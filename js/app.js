@@ -2266,8 +2266,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 100);
     }
 
-    loadNextWord();
-    }
+
 
 
     // 14. Genel Modal Penceresi Kontrolü (Modal Utility Functions)
