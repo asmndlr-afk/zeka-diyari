@@ -1,6 +1,10 @@
 // Ana Uygulama Mantığı (App Logic)
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Profil Avatarını Yükleme (Restore Avatar)
+    const savedAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
+    document.querySelectorAll('.nav-avatar-btn img').forEach(img => img.src = savedAvatar);
+
     // 1. Durum Yönetimi (State Management)
     let isSoundEnabled = true;
     let activeCategory = null;
@@ -177,6 +181,63 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         setTimeout(() => lucide.createIcons(), 100);
     });
+
+    // 8.5 Profil Avatarı Özelleştirme (Avatar Customization)
+    const navAvatarBtn = document.querySelector(".nav-avatar-btn");
+    if (navAvatarBtn) {
+        navAvatarBtn.addEventListener("click", () => {
+            playSound('click');
+            openAvatarSelectionModal();
+        });
+    }
+
+    function openAvatarSelectionModal() {
+        const avatars = [
+            { name: "Panda (Varsayılan)", path: "assets/images/kids_avatar.jpg" },
+            { name: "Sevimli Panda", path: "assets/images/avatars/panda.png" },
+            { name: "Sevimli Kedi", path: "assets/images/avatars/cat.png" },
+            { name: "Sevimli Köpek", path: "assets/images/avatars/dog.png" },
+            { name: "Sevimli Tavşan", path: "assets/images/avatars/rabbit.png" }
+        ];
+        
+        let avatarsHTML = `
+            <div class="avatar-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; padding: 15px 0;">
+        `;
+        
+        const currentAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
+        
+        avatars.forEach(av => {
+            const isSelected = av.path === currentAvatar;
+            avatarsHTML += `
+                <div class="avatar-option-card" data-path="${av.path}" style="border: 3px solid ${isSelected ? 'var(--pastel-purple)' : 'transparent'}; background: var(--bg-card); border-radius: 20px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-small);">
+                    <img src="${av.path}" alt="${av.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--text-muted); margin-bottom: 8px;">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${av.name}</div>
+                </div>
+            `;
+        });
+        
+        avatarsHTML += `</div>`;
+        
+        showModal("Profil Karakterini Seç", avatarsHTML);
+        
+        // Dinamik tıklama ve hover dinleyicileri
+        const options = document.querySelectorAll(".avatar-option-card");
+        options.forEach(opt => {
+            opt.addEventListener("click", () => {
+                const selectedPath = opt.getAttribute("data-path");
+                localStorage.setItem('selectedAvatar', selectedPath);
+                document.querySelectorAll('.nav-avatar-btn img').forEach(img => img.src = selectedPath);
+                playSound('success');
+                closeModal();
+            });
+            opt.addEventListener("mouseenter", () => {
+                opt.style.transform = "scale(1.05)";
+            });
+            opt.addEventListener("mouseleave", () => {
+                opt.style.transform = "scale(1)";
+            });
+        });
+    }
 
     // 9. Kategorileri Render Etme (Render Categories)
     function renderCategories() {
@@ -479,6 +540,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 startMathGame(modalBodyElement, 1);
             } else if (game.id === 4) {
                 startWordGame(modalBodyElement, 1);
+            } else if (game.id === 5) {
+                startFastFingersGame(modalBodyElement, 1);
             }
         }, 2200);
     }
@@ -1885,6 +1948,325 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         loadNextWord();
+    }
+
+    // ============================================================
+    // HIZLI PARMAKLAR (REFLEKS) OYUN MOTORU
+    // ============================================================
+    function startFastFingersGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
+
+        const LEVELS = [
+            { level: 1, name: "Başlangıç", emoji: "⭐", targetScore: 10, speed: 1300, scoreBase: 50, color: "#CAFFBF", animals: ["🐼", "🐨", "🐸"] },
+            { level: 2, name: "Kolay", emoji: "🌟", targetScore: 12, speed: 1100, scoreBase: 100, color: "#A0C4FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶"] },
+            { level: 3, name: "Orta", emoji: "🏆", targetScore: 15, speed: 900, scoreBase: 150, color: "#FFD6A5", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁"] },
+            { level: 4, name: "Zor", emoji: "🔥", targetScore: 18, speed: 750, scoreBase: 200, color: "#D8BBFF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵"] },
+            { level: 5, name: "Şampiyon", emoji: "👑", targetScore: 20, speed: 600, scoreBase: 300, color: "#FFC6FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵", "🐙", "🦄"] }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let score = 0;
+        let lives = 3;
+        let gameActive = true;
+        let lastHole = -1;
+        let popTimeout = null;
+
+        container.innerHTML = `
+            <div class="fast-fingers-game" style="text-align:center; padding:10px 0;">
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div class="game-lives" style="display:flex; gap:4px;">
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                    </div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Hedef: <span id="score-counter" style="color:#D97706;">0</span>/${cfg.targetScore}
+                    </div>
+                </div>
+
+                <div id="instruction-bar" style="margin-bottom:15px; font-weight:700; font-size:1rem; color:var(--text-main); min-height:24px;">
+                    Parlayan sevimli hayvanı yakala! ⚡
+                </div>
+
+                <div class="mole-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:280px; margin:0 auto 15px;">
+                    ${[0,1,2,3,4,5,6,7,8].map(i => `
+                        <div class="mole-hole" data-id="${i}" style="aspect-ratio:1; background:rgba(0,0,0,0.05); border:2px dashed var(--text-muted); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; overflow:visible; transition:all 0.15s ease;">
+                            <div class="mole-animal" style="font-size:2.4rem; position:absolute; bottom:-10px; opacity:0; transform:translateY(20px) scale(0.5); transition:all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events:none; user-select:none;"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        lucide.createIcons();
+
+        const holes = container.querySelectorAll(".mole-hole");
+        const scoreCounter = container.querySelector("#score-counter");
+        const hearts = container.querySelectorAll(".heart-icon");
+        const instructionBar = container.querySelector("#instruction-bar");
+
+        function updateLivesUI() {
+            hearts.forEach((heart, idx) => {
+                if (idx < lives) {
+                    heart.style.fill = "#ef4444";
+                    heart.style.color = "#ef4444";
+                } else {
+                    heart.style.fill = "none";
+                    heart.style.color = "var(--text-muted)";
+                }
+            });
+        }
+
+        function randomHole() {
+            let h;
+            do {
+                h = Math.floor(Math.random() * holes.length);
+            } while (h === lastHole);
+            lastHole = h;
+            return h;
+        }
+
+        let currentlyActiveHole = -1;
+        let tappedThisTurn = false;
+
+        function popAnimal() {
+            if (!gameActive) return;
+
+            if (currentlyActiveHole !== -1 && !tappedThisTurn) {
+                lives--;
+                updateLivesUI();
+                playSound('locked');
+                
+                showFloatingText(holes[currentlyActiveHole], "Kaçırdın! 😢", "red");
+
+                if (lives <= 0) {
+                    endGame(false);
+                    return;
+                }
+            }
+
+            tappedThisTurn = false;
+            
+            holes.forEach(hole => {
+                hole.style.background = "rgba(0,0,0,0.05)";
+                hole.style.borderColor = "var(--text-muted)";
+                const animalEl = hole.querySelector(".mole-animal");
+                animalEl.style.opacity = "0";
+                animalEl.style.transform = "translateY(20px) scale(0.5)";
+            });
+
+            const activeIdx = randomHole();
+            currentlyActiveHole = activeIdx;
+            const targetHole = holes[activeIdx];
+            
+            const randomAnimal = cfg.animals[Math.floor(Math.random() * cfg.animals.length)];
+            const animalEl = targetHole.querySelector(".mole-animal");
+            animalEl.innerText = randomAnimal;
+            
+            targetHole.style.background = "var(--pastel-yellow)";
+            targetHole.style.borderColor = "#D97706";
+            
+            setTimeout(() => {
+                animalEl.style.opacity = "1";
+                animalEl.style.transform = "translateY(0) scale(1)";
+            }, 20);
+
+            popTimeout = setTimeout(() => {
+                popAnimal();
+            }, cfg.speed);
+        }
+
+        holes.forEach(hole => {
+            hole.addEventListener("click", () => {
+                if (!gameActive) return;
+                
+                const id = parseInt(hole.getAttribute("data-id"));
+                
+                if (id === currentlyActiveHole && !tappedThisTurn) {
+                    tappedThisTurn = true;
+                    score++;
+                    scoreCounter.innerText = score;
+                    playSound('click');
+                    
+                    showFloatingText(hole, "+10 ⚡", "green");
+                    
+                    const animalEl = hole.querySelector(".mole-animal");
+                    animalEl.style.transform = "scale(1.2) rotate(10deg)";
+                    setTimeout(() => {
+                        animalEl.style.opacity = "0";
+                    }, 100);
+
+                    if (score >= cfg.targetScore) {
+                        endGame(true);
+                    }
+                } else if (id !== currentlyActiveHole) {
+                    lives--;
+                    updateLivesUI();
+                    playSound('locked');
+                    showFloatingText(hole, "Boş! ❌", "red");
+                    
+                    if (lives <= 0) {
+                        endGame(false);
+                    }
+                }
+            });
+        });
+
+        function showFloatingText(element, text, color) {
+            const span = document.createElement("span");
+            span.innerText = text;
+            span.style.position = "absolute";
+            span.style.top = "-10px";
+            span.style.left = "50%";
+            span.style.transform = "translateX(-50%)";
+            span.style.fontWeight = "bold";
+            span.style.fontSize = "0.9rem";
+            span.style.color = color === "green" ? "#166534" : "#ef4444";
+            span.style.animation = "float-balloon 0.8s ease-out forwards";
+            span.style.pointerEvents = "none";
+            element.appendChild(span);
+            setTimeout(() => span.remove(), 800);
+        }
+
+        function endGame(isWin) {
+            gameActive = false;
+            currentlyActiveHole = -1;
+            tappedThisTurn = true;
+            if (popTimeout) clearTimeout(popTimeout);
+
+            if (isWin) {
+                playSound('success');
+                
+                const scoreAwarded = cfg.scoreBase + (lives * 30);
+                const starsAwarded = lives === 3 ? 25 : (lives === 2 ? 15 : 10);
+
+                const ach = window.achievementsData;
+                ach.userStats.stars += starsAwarded;
+                ach.userStats.totalScore += scoreAwarded;
+                ach.userStats.completedGames += 1;
+
+                const speedyBadge = ach.badges.find(b => b.id === "speedy");
+                if (speedyBadge) {
+                    speedyBadge.unlocked = true;
+                    speedyBadge.tooltip = "Şimşek Refleks: Hızlı Parmaklar refleks oyununda seviye bitirdin!";
+                }
+
+                const task1 = ach.dailyTasks.find(t => t.id === 1);
+                if (task1 && !task1.completed) {
+                    task1.completed = true;
+                    ach.userStats.stars += task1.reward;
+                }
+
+                const done = ach.dailyTasks.filter(t => t.completed).length;
+                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">⚡🏆</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">⚡ Şimşek Hızında!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">${cfg.emoji} Seviye ${levelNumber} Tamamlandı!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Seviyeyi başarıyla bitirdin ve <strong>${lives} canını</strong> korudun!
+                            </p>
+                            
+                            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                                </div>
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                                ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay").addEventListener("click", () => {
+                        playSound('click');
+                        startFastFingersGame(container, levelNumber);
+                    });
+                    if (levelNumber < 5) {
+                        container.querySelector("#btn-next-level").addEventListener("click", () => {
+                            playSound('click');
+                            startFastFingersGame(container, levelNumber + 1);
+                        });
+                    }
+                    container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                        playSound('click');
+                        closeModal();
+                        renderAchievements();
+                    });
+                }, 600);
+
+            } else {
+                playSound('locked');
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Oyun Bitti!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Seviyeyi tamamlayamadın. 3 canının hepsi bitti.
+                            </p>
+                            
+                            <div style="display:flex; gap:10px; justify-content:center;">
+                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
+                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay-fail").addEventListener("click", () => {
+                        playSound('click');
+                        startFastFingersGame(container, levelNumber);
+                    });
+                    container.querySelector("#btn-close-fail").addEventListener("click", () => {
+                        playSound('click');
+                        closeModal();
+                    });
+                }, 600);
+            }
+        }
+
+        let countdown = 3;
+        instructionBar.innerText = `Oyun başlıyor: ${countdown}`;
+        
+        const countInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                instructionBar.innerText = `Oyun başlıyor: ${countdown}`;
+                playSound('click');
+            } else {
+                clearInterval(countInterval);
+                instructionBar.innerText = "YAKALA! ⚡";
+                playSound('success');
+                popAnimal();
+            }
+        }, 1000);
+
+        activeGameTimer = setInterval(() => {
+            if (!gameActive) {
+                clearInterval(activeGameTimer);
+                clearInterval(countInterval);
+                if (popTimeout) clearTimeout(popTimeout);
+            }
+        }, 100);
+    }
+
+    loadNextWord();
     }
 
 

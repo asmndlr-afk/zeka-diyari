@@ -109,12 +109,28 @@ gamesList.push({
     locked: false
 });
 
-// 5 - 100. Oyunlar (Çok Yakında / Kilitli)
+// 5. Oyun: Hızlı Parmaklar
+gamesList.push({
+    id: 5,
+    name: "Hızlı Parmaklar",
+    category: "Refleks Oyunları",
+    categoryClass: "refleks",
+    color: "#FFC6FF",
+    icon: "zap",
+    age: "6-12 yaş",
+    difficulty: "Kolay",
+    skills: ["El-Göz Koordinasyonu", "Tepki Süresi", "Odaklanma"],
+    desc: "Ekranda sırayla parlayan sevimli hayvanlara en hızlı şekilde tıkla, reflekslerini konuştur!",
+    image: "assets/images/hizli_parmaklar.jpg",
+    locked: false
+});
+
+// 6 - 100. Oyunlar (Çok Yakında / Kilitli)
 const categoriesKeys = Object.keys(categoriesConfig);
 const ages = ["6-8 yaş", "8-10 yaş", "10-12 yaş", "6-12 yaş"];
 const difficulties = ["Kolay", "Orta", "Zor"];
 
-for (let i = 5; i <= 100; i++) {
+for (let i = 6; i <= 100; i++) {
     const category = categoriesKeys[i % categoriesKeys.length];
     const categoryInfo = categoriesConfig[category];
     const titleBase = gameTitles[(i - 5) % gameTitles.length];
