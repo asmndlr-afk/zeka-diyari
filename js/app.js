@@ -854,13 +854,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
-        activeGameTimer = setInterval(() => {
-            timeElapsed++;
-            const el = document.getElementById("game-timer");
-            if (el) el.innerText = timeElapsed;
-            else { clearInterval(activeGameTimer); activeGameTimer = null; }
-        }, 1000);
+        // Başlangıçta tüm kartları gösterip 1.8 saniye sonra kapatma (Ezberleme Süresi)
+        isChecking = true;
+        container.querySelectorAll(".memory-card").forEach(card => card.classList.add("flipped"));
+
+        setTimeout(() => {
+            container.querySelectorAll(".memory-card").forEach(card => card.classList.remove("flipped"));
+            isChecking = false;
+            
+            // Zamanlayıcıyı kartlar kapandıktan sonra başlatıyoruz
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+            activeGameTimer = setInterval(() => {
+                timeElapsed++;
+                const el = document.getElementById("game-timer");
+                if (el) el.innerText = timeElapsed;
+                else { clearInterval(activeGameTimer); activeGameTimer = null; }
+            }, 1000);
+        }, 1800);
     }
 
     function showWinScreen(container, levelNumber, cfg, time, moves) {
