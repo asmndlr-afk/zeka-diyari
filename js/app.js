@@ -2795,7 +2795,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>\` : ''}
+                                ${levelNumber < 10 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
@@ -3438,7 +3438,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                \${levelNumber < 10 ? \`<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>\` : ''}
+                                ${levelNumber < 10 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
