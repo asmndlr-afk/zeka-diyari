@@ -1362,7 +1362,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         Doğru: <span id="math-correct-count">0</span>/${cfg.targetCorrect}
                     </div>
                 </div>
-                <div class="math-answers" id="math-answers"></div>
+                <div class="math-answers-grid" id="math-answers"></div>
                 <button class="btn btn-locked" id="btn-give-up" style="width:100%; font-size:0.82rem;">
                     🏳️ Vazgeç & Kapat
                 </button>
