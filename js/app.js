@@ -1033,7 +1033,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function createBalloon() {
             if (!playfield) return;
-            const balloonColor = cfg.balloonColors[Math.floor(Math.random() * cfg.balloonColors.length)];
+
+            // Hedef rengin daha sık gelmesi için ağırlık ekliyoruz (%45 olasılıkla hedef renk, %55 rastgele)
+            let balloonColor;
+            if (Math.random() < 0.45) {
+                balloonColor = cfg.balloonColors.find(c => c.name === cfg.targetColor) || cfg.balloonColors[0];
+            } else {
+                balloonColor = cfg.balloonColors[Math.floor(Math.random() * cfg.balloonColors.length)];
+            }
             const balloon = document.createElement("div");
             balloon.className = "game-balloon";
             
