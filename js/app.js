@@ -28,6 +28,20 @@ document.addEventListener("DOMContentLoaded", () => {
         saveGameHeartsState(gameId, { lockedUntil: Date.now() + 5 * 60 * 1000 });
     }
 
+    function isLevelUnlocked(gameId, level) {
+        if (level === 1) return true;
+        const maxUnlocked = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_max_unlocked`) || "1");
+        return level <= maxUnlocked;
+    }
+
+    function unlockNextLevel(gameId, currentLevel) {
+        const nextLevel = currentLevel + 1;
+        const currentMax = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_max_unlocked`) || "1");
+        if (nextLevel > currentMax) {
+            localStorage.setItem(`zeka_diyari_game_${gameId}_max_unlocked`, nextLevel);
+        }
+    }
+
 
     // 2. DOM Elemanları (DOM Elements)
     const splashScreen = document.getElementById("splash-screen");
@@ -677,7 +691,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let lives        = 3;
         let isChecking   = false;
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(1, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         const cardsHTML = cardPool.map((emoji, idx) => `
             <div class="memory-card" data-emoji="${emoji}" data-idx="${idx}">
@@ -792,6 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (matchedPairs === cfg.pairs) {
                             if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+                            unlockNextLevel(1, levelNumber);
                             showWinScreen(container, levelNumber, cfg, timeElapsed, movesCount);
                         }
                     }, 450);
@@ -965,7 +983,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let spawnTimer = null;
         let balloonElements = [];
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(2, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="balloon-game-container" style="user-select:none;">
@@ -1195,6 +1216,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameWin() {
             cleanUp();
+            unlockNextLevel(2, levelNumber);
             playSound('success');
 
             const scoreAwarded = cfg.scoreBase + Math.max(0, 300 - gameTime * 5 + lives * 30);
@@ -1298,7 +1320,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let currentQuestion = null;
         let isAnswering = false;
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(3, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="math-game-container" style="user-select:none;">
@@ -1585,6 +1610,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameWin() {
             cleanUp();
+            unlockNextLevel(3, levelNumber);
             playSound('success');
 
             const scoreAwarded = cfg.scoreBase + Math.max(0, 300 - gameTime * 4 - incorrectCount * 10);
@@ -1701,7 +1727,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let spellingProgress = "";
         let usedWordIndices = [];
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(4, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="word-game-container" style="user-select:none;">
@@ -1930,6 +1959,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameWin() {
             cleanUp();
+            unlockNextLevel(4, levelNumber);
             playSound('success');
 
             const scoreAwarded = cfg.scoreBase + Math.max(0, 300 - gameTime * 4 - incorrectGuesses * 8);
@@ -2040,7 +2070,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let lastHole = -1;
         let popTimeout = null;
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(5, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="fast-fingers-game" style="text-align:center; padding:10px 0; user-select:none;">
@@ -2414,7 +2447,10 @@ document.addEventListener("DOMContentLoaded", () => {
         
         generateSolvableMaze();
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px;">' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(6, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="maze-game" style="text-align:center; padding:10px 0; user-select:none;">
@@ -2586,6 +2622,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cleanUp();
 
             if (isWin) {
+                unlockNextLevel(6, levelNumber);
                 playSound('success');
 
                 const scoreAwarded = cfg.scoreBase + Math.max(0, 200 - timeElapsed * 4);
@@ -2708,7 +2745,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let currentTarget = "";
         let choices = [];
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.emoji + ' ' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(7, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.emoji + ' ' + l.level : '🔒 ' + l.level) + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="shadow-game-container" style="user-select:none;">
@@ -2877,6 +2917,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cleanUp();
 
             if (isWin) {
+                unlockNextLevel(7, levelNumber);
                 playSound('success');
 
                 const scoreBase = 50 * levelNumber;
@@ -3035,7 +3076,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let shuffledQuestions = [];
         let questionIndex = 0;
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px;">' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(8, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
 
         function loadQuestion() {
             remainingTime = cfg.speed;
@@ -3220,6 +3264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cleanUp();
 
             if (isWin) {
+                unlockNextLevel(8, levelNumber);
                 playSound('success');
 
                 const scoreBase = 50 * levelNumber;
@@ -3359,7 +3404,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         numbers = shuffle(numbers);
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(9, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="number-chase-game" style="text-align:center; padding:10px 0; user-select:none;">
@@ -3484,6 +3532,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cleanUp();
 
             if (isWin) {
+                unlockNextLevel(9, levelNumber);
                 playSound('success');
 
                 const scoreBase = 60 * levelNumber;
@@ -3613,7 +3662,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let roundsWon = 0;
         let lives = 3;
 
-        const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '">' + l.level + '</button>').join('');
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(10, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
 
         container.innerHTML = `
             <div class="rhythmic-memory-game" style="text-align:center; padding:10px 0; user-select:none;">
@@ -3781,6 +3833,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cleanUp();
             
             if (isWin) {
+                unlockNextLevel(10, levelNumber);
                 playSound('success');
                 const scoreAwarded = cfg.level * 100 + (lives * 40);
                 const starsAwarded = lives === 3 ? 25 : (lives === 2 ? 15 : 10);
