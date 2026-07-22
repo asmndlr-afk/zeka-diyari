@@ -1,0 +1,280 @@
+/* ==========================================================================
+   KEYFRAMES VE ANİMASYONLAR (KEYFRAMES & ANIMATIONS)
+   ========================================================================== */
+
+/* Nabız Efekti (Pulsing button) */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(202, 255, 191, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 15px rgba(202, 255, 191, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(202, 255, 191, 0);
+    }
+}
+
+/* Yavaşça Zıplama (Elastic bounce for mascot) */
+@keyframes bounce-loop {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-12px) scale(0.98);
+    }
+}
+
+/* Bulutların Süzülmesi (Cloud floating) */
+@keyframes float-cloud-left-right {
+    0% {
+        transform: translateX(-5%);
+    }
+    50% {
+        transform: translateX(5%);
+    }
+    100% {
+        transform: translateX(-5%);
+    }
+}
+
+@keyframes float-cloud-right-left {
+    0% {
+        transform: translateX(5%);
+    }
+    50% {
+        transform: translateX(-5%);
+    }
+    100% {
+        transform: translateX(5%);
+    }
+}
+
+/* Yıldızların Parıldaması (Star twinkle) */
+@keyframes twinkle {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8) rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2) rotate(180deg);
+    }
+}
+
+/* Balon Yükselmesi (Balloon floating) */
+@keyframes float-balloon {
+    0% {
+        transform: translateY(10px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-15px) rotate(3deg);
+    }
+    100% {
+        transform: translateY(10px) rotate(0deg);
+    }
+}
+
+/* Oyun Yükleme Çubuğu Animasyonu */
+@keyframes fill-loader {
+    0% {
+        width: 0%;
+    }
+    20% {
+        width: 30%;
+    }
+    40% {
+        width: 45%;
+    }
+    60% {
+        width: 75%;
+    }
+    80% {
+        width: 90%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   ARKAPLAN DEKORATİF ANİMASYONLARI (BACKGROUND ANIMATED ELEMENTS)
+   ========================================================================== */
+.bg-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.cloud-decor {
+    position: absolute;
+    opacity: 0.35;
+    fill: #FFFFFF;
+    transition: fill var(--transition-slow);
+}
+
+[data-theme="dark"] .cloud-decor {
+    fill: rgba(255, 255, 255, 0.05);
+}
+
+.cloud-1 {
+    top: 15%;
+    left: 8%;
+    width: 180px;
+    animation: float-cloud-left-right 18s infinite ease-in-out;
+}
+
+.cloud-2 {
+    top: 45%;
+    right: 6%;
+    width: 220px;
+    animation: float-cloud-right-left 22s infinite ease-in-out;
+}
+
+.cloud-3 {
+    top: 75%;
+    left: 5%;
+    width: 150px;
+    animation: float-cloud-left-right 15s infinite ease-in-out;
+}
+
+.star-decor {
+    position: absolute;
+    color: var(--pastel-yellow);
+    opacity: 0.6;
+    animation: twinkle 4s infinite ease-in-out;
+}
+
+.star-1 {
+    top: 25%;
+    right: 20%;
+    font-size: 24px;
+    animation-delay: 0.5s;
+}
+
+.star-2 {
+    top: 60%;
+    left: 15%;
+    font-size: 18px;
+    animation-delay: 1.5s;
+}
+
+.star-3 {
+    top: 85%;
+    right: 15%;
+    font-size: 20px;
+    animation-delay: 2.5s;
+}
+
+.balloon-decor {
+    position: absolute;
+    width: 70px;
+    height: 90px;
+    opacity: 0.4;
+    animation: float-balloon 12s infinite ease-in-out;
+}
+
+.balloon-1 {
+    top: 30%;
+    left: 45%;
+    fill: var(--pastel-pink);
+    animation-delay: 1s;
+}
+
+.balloon-2 {
+    top: 70%;
+    right: 40%;
+    fill: var(--pastel-blue);
+    animation-delay: 3s;
+}
+
+/* ==========================================================================
+   PARTİKÜL EFEKTLERİ (BACKGROUND PARTICLES)
+   ========================================================================== */
+.particles-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--bg-particles);
+    animation: float-up-particle 15s infinite linear;
+}
+
+@keyframes float-up-particle {
+    0% {
+        transform: translateY(100vh) scale(0.5) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-10vh) scale(1.2) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Sarsılma Efekti (Locked shake feedbeck) */
+@keyframes shake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    15% { transform: translateX(-8px) rotate(-1.5deg); }
+    30% { transform: translateX(6px) rotate(1.5deg); }
+    45% { transform: translateX(-6px) rotate(-1deg); }
+    60% { transform: translateX(4px) rotate(1deg); }
+    75% { transform: translateX(-2px) rotate(-0.5deg); }
+    90% { transform: translateX(1px) rotate(0.5deg); }
+}
+
+/* Balonların aşağıdan yukarıya uçuş animasyonu (Balon Patlatma) */
+@keyframes float-up-balloon {
+    0% {
+        transform: translateY(110%) translateX(0) scale(1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateY(50%) translateX(15px) scale(1.05);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-20%) translateX(-15px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Harflerin havada dalgalanma animasyonu (Kelime Avı) */
+@keyframes float-letter {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-6px) rotate(3deg);
+    }
+}
+
+/* Yanlış cevap sarsıntı animasyonu */
+@keyframes shake-wrong {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+

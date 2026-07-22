@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeka Diyarı | Çocuklar İçin Eğlenceli Zeka Oyunları</title>
+    <meta name="description" content="6-12 yaş grubu çocuklar için hafıza, mantık, dikkat ve refleks geliştiren, modern ve eğlenceli zeka oyunları platformu.">
+    <meta name="author" content="Zeka Diyarı Geliştirici Ekibi">
+    
+    <!-- CSS Stil Dosyaları -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    
+    <!-- PWA ve Mobil Destek Etiketleri -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zeka Diyarı">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
+</head>
+<body data-theme="light">
+
+    <!-- ==========================================================================
+       PARTİKÜLLER VE HAREKETLİ ARKA PLAN (ANIMATED BACKGROUNDS)
+       ========================================================================== -->
+    <div id="particles-container" class="particles-container"></div>
+    
+    <div class="bg-decorations">
+        <!-- Bulut Dekorasyonları (Yavaşça yüzen bulut SVG'leri) -->
+        <svg class="cloud-decor cloud-1" viewBox="0 0 100 40">
+            <path d="M 20,30 Q 30,10 45,20 Q 60,10 75,25 Q 90,20 95,35 L 5,35 Z" />
+        </svg>
+        <svg class="cloud-decor cloud-2" viewBox="0 0 100 40">
+            <path d="M 10,25 Q 25,5 40,20 Q 55,5 75,20 Q 90,15 95,30 L 5,30 Z" />
+        </svg>
+        <svg class="cloud-decor cloud-3" viewBox="0 0 100 40">
+            <path d="M 15,30 Q 30,15 50,25 Q 70,10 85,25 L 5,25 Z" />
+        </svg>
+        
+        <!-- Yıldız Süslemeleri (Parıldayan yıldızlar) -->
+        <div class="star-decor star-1"><i data-lucide="sparkles"></i></div>
+        <div class="star-decor star-2"><i data-lucide="star"></i></div>
+        <div class="star-decor star-3"><i data-lucide="sparkle"></i></div>
+        
+        <!-- Balon Dekorasyonları -->
+        <svg class="balloon-decor balloon-1" viewBox="0 0 50 70">
+            <path d="M25,0 C11,0 0,11 0,25 C0,39 15,50 25,55 C35,50 50,39 50,25 C50,11 39,0 25,0 Z" />
+            <path d="M25,55 L22,60 L28,60 Z" fill="#E2E8F0" />
+            <path d="M25,60 C25,65 20,68 25,72" fill="none" stroke="#CBD5E1" stroke-width="2" />
+        </svg>
+        <svg class="balloon-decor balloon-2" viewBox="0 0 50 70">
+            <path d="M25,0 C11,0 0,11 0,25 C0,39 15,50 25,55 C35,50 50,39 50,25 C50,11 39,0 25,0 Z" />
+            <path d="M25,55 L22,60 L28,60 Z" fill="#E2E8F0" />
+            <path d="M25,60 C25,65 22,67 25,72" fill="none" stroke="#CBD5E1" stroke-width="2" />
+        </svg>
+    </div>
+
+    <!-- ==========================================================================
+       KARŞILAMA EKRANI (WELCOME SPLASH SCREEN)
+       ========================================================================== -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-mascot-container">
+                <!-- Sevimli Beyin Sihirbazı Maskotu -->
+                <svg viewBox="0 0 200 200" class="splash-mascot">
+                    <!-- Beyin Şekli -->
+                    <path d="M70,80 C50,80 35,95 35,115 C35,135 55,150 75,150 C80,150 85,145 90,140 C95,145 100,150 105,150 C125,150 145,135 145,115 C145,95 130,80 110,80 C105,80 100,85 95,90 C90,85 85,80 70,80 Z" fill="#FFC6FF" stroke="#1F2937" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+                    <!-- Gözler -->
+                    <circle cx="72" cy="115" r="8" fill="#1F2937" />
+                    <circle cx="72" cy="112" r="3" fill="#FFFFFF" />
+                    <circle cx="108" cy="115" r="8" fill="#1F2937" />
+                    <circle cx="108" cy="112" r="3" fill="#FFFFFF" />
+                    <!-- Yanaklar (Allık) -->
+                    <circle cx="58" cy="125" r="6" fill="#FFADAD" opacity="0.8" />
+                    <circle cx="122" cy="125" r="6" fill="#FFADAD" opacity="0.8" />
+                    <!-- Gülümseme -->
+                    <path d="M83,124 Q90,131 97,124" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round" />
+                    <!-- Şapka -->
+                    <polygon points="90,45 130,60 90,75 50,60" fill="#4F46E5" stroke="#1F2937" stroke-width="5" stroke-linejoin="round" />
+                    <rect x="85" y="60" width="10" height="25" fill="#4F46E5" stroke="#1F2937" stroke-width="5" />
+                    <path d="M130,60 L140,80" stroke="#FDFFB6" stroke-width="3.5" stroke-linecap="round" />
+                    <circle cx="140" cy="80" r="5" fill="#FDFFB6" />
+                </svg>
+            </div>
+            <h1 class="splash-title">Zeka Diyarı</h1>
+            <p class="splash-subtitle">Eğlenceli zeka oyunları ve macera dolu görevler seni bekliyor!</p>
+            <button id="btn-start" class="btn btn-start">Oynamaya Başla</button>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+       STICKY NAVİGASYON ÇUBUĞU (STICKY NAVBAR)
+       ========================================================================== -->
+    <header class="navbar glass">
+        <!-- Sol Logo ve Platform İsmi -->
+        <a href="#" class="nav-brand">
+            <svg class="nav-logo-svg" viewBox="0 0 100 100">
+                <!-- Sevimli Logo -->
+                <circle cx="50" cy="50" r="45" fill="#FDFFB6" stroke="#1F2937" stroke-width="4" />
+                <path d="M35,45 C35,35 45,35 50,42 C55,35 65,35 65,45 C65,58 50,68 50,68 C50,68 35,58 35,45 Z" fill="#FFADAD" stroke="#1F2937" stroke-width="3" />
+                <circle cx="43" cy="45" r="3" fill="#1F2937" />
+                <circle cx="57" cy="45" r="3" fill="#1F2937" />
+            </svg>
+            <span class="nav-title">Zeka Diyarı</span>
+        </a>
+
+        <!-- Orta Arama Çubuğu -->
+        <div class="nav-search">
+            <i data-lucide="search" class="nav-search-icon"></i>
+            <input type="text" id="search-input" class="nav-search-input" placeholder="Oyun ara, beceri seç veya yaş yaz...">
+        </div>
+
+        <!-- Sağ İkonlar ve Profil -->
+        <div class="nav-actions">
+            <!-- Ses Aç/Kapat -->
+            <button id="btn-sound-toggle" class="btn-icon" title="Müzik Aç/Kapat">
+                <i data-lucide="volume-2"></i>
+            </button>
+            
+            <!-- Tam Ekran Modu -->
+            <button id="btn-fullscreen-toggle" class="btn-icon" title="Tam Ekran">
+                <i data-lucide="maximize"></i>
+            </button>
+            
+            <!-- Açık/Koyu Tema Değiştirici -->
+            <button id="btn-theme-toggle" class="btn-icon" title="Tema Değiştir">
+                <i data-lucide="sun"></i>
+            </button>
+            
+            <!-- Oyunu Cihaza Yükle (PWA) -->
+            <button id="btn-install-app" class="btn-icon" title="Oyunu Cihazına Yükle" style="display: none;">
+                <i data-lucide="download"></i>
+            </button>
+            
+            <!-- Profil Avatarı -->
+            <button class="nav-avatar-btn" title="Benim Sayfam">
+                <img src="assets/images/kids_avatar.jpg" alt="Çocuk Profil">
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================================================
+       KAHRAMAN ALANI (HERO AREA)
+       ========================================================================== -->
+    <section class="hero glass">
+        <div class="hero-content">
+            <span class="hero-tag">🌟 EĞLENCE & BİLİM YAN YANA</span>
+            <h1 class="hero-title">Bugün Hangi Oyunu Oynamak İstersin?</h1>
+            <p class="hero-desc">
+                Zeka Diyarı'ndaki birbirinden sevimli karakterlerle tanış, hafızanı geliştir, mantık bulmacalarını çöz ve günlük yıldızları toplayarak başarı rozetlerini kazan!
+            </p>
+            <button id="btn-hero-action" class="btn btn-primary btn-start">
+                <i data-lucide="compass"></i> Maceraya Başla
+            </button>
+        </div>
+        <div class="hero-illustration">
+            <!-- Kahraman Alanı SVG İllüstrasyonu -->
+            <svg viewBox="0 0 500 400" class="hero-illust-svg">
+                <!-- Gökkuşağı -->
+                <path d="M 50,320 A 200,200 0 0,1 450,320" fill="none" stroke="#FFADAD" stroke-width="15" stroke-linecap="round" />
+                <path d="M 70,320 A 180,180 0 0,1 430,320" fill="none" stroke="#FFD6A5" stroke-width="15" stroke-linecap="round" />
+                <path d="M 90,320 A 160,160 0 0,1 410,320" fill="none" stroke="#FDFFB6" stroke-width="15" stroke-linecap="round" />
+                <path d="M 110,320 A 140,140 0 0,1 390,320" fill="none" stroke="#CAFFBF" stroke-width="15" stroke-linecap="round" />
+                <path d="M 130,320 A 120,120 0 0,1 370,320" fill="none" stroke="#A0C4FF" stroke-width="15" stroke-linecap="round" />
+                
+                <!-- Alt Bulutlar -->
+                <path d="M 20,330 Q 50,290 85,325 Q 120,290 155,330 Q 180,300 205,330 Q 220,350 200,370 L 20,370 Z" fill="#FFFFFF" opacity="0.95" />
+                <path d="M 300,330 Q 330,295 365,330 Q 400,290 435,325 Q 460,300 480,330 L 480,370 L 300,370 Z" fill="#FFFFFF" opacity="0.95" />
+                
+                <!-- Havada Süzülen Küçük Bulut -->
+                <path d="M 50,150 Q 70,120 95,145 Q 120,120 145,150 L 50,150 Z" fill="#FFFFFF" opacity="0.8" />
+                
+                <!-- Yıldız Roket -->
+                <g transform="translate(190, 80) rotate(15)">
+                    <!-- Alev -->
+                    <path d="M 45,130 Q 60,185 60,150 Q 60,185 75,130 Z" fill="#FFADAD" />
+                    <path d="M 50,130 Q 60,165 60,145 Q 60,165 70,130 Z" fill="#FFD6A5" />
+                    <!-- Roket Gövdesi -->
+                    <path d="M 35,60 Q 60,-10 85,60 L 80,130 L 40,130 Z" fill="#FFFFFF" stroke="#1F2937" stroke-width="4" stroke-linejoin="round" />
+                    <!-- Kanatlar -->
+                    <path d="M 35,90 L 10,130 L 40,130 Z" fill="#FFC6FF" stroke="#1F2937" stroke-width="4" />
+                    <path d="M 85,90 L 110,130 L 80,130 Z" fill="#FFC6FF" stroke="#1F2937" stroke-width="4" />
+                    <!-- Burun Konisi -->
+                    <path d="M 35,60 Q 60,-10 85,60 Z" fill="#A0C4FF" stroke="#1F2937" stroke-width="4" />
+                    <!-- Pencere -->
+                    <circle cx="60" cy="70" r="13" fill="#FDFFB6" stroke="#1F2937" stroke-width="3" />
+                    <circle cx="58" cy="67" r="4" fill="#FFFFFF" />
+                </g>
+            </svg>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+       OYUN KATEGORİLERİ (GAME CATEGORIES)
+       ========================================================================== -->
+    <main>
+        <section id="categories-section" class="categories-section">
+            <div class="section-header">
+                <h2 class="section-title">Oyun Kategorileri</h2>
+            </div>
+            <!-- Kategoriler JS ile buraya basılacak -->
+            <div id="categories-container" class="categories-grid"></div>
+        </section>
+
+        <!-- ==========================================================================
+           TÜM OYUNLAR ALANI (ALL GAMES - 100 CARDS GRID)
+           ========================================================================== -->
+        <section id="games-section" class="games-section">
+            <div class="section-header">
+                <h2 class="section-title">Tüm Oyunlar</h2>
+            </div>
+            
+            <!-- Oyun Kartları JS ile buraya basılacak -->
+            <div id="games-grid" class="games-grid"></div>
+        </section>
+
+        <!-- ==========================================================================
+           GÜNLÜK BAŞARILAR VE İLERLEME ALANI (ACHIEVEMENTS PANEL)
+           ========================================================================== -->
+        <section id="achievements-section" class="achievements-section">
+            <div class="section-header">
+                <h2 class="section-title">Başarılarım ve İlerlemem</h2>
+            </div>
+            <div class="achievements-grid">
+                <!-- Sol Kart: Günlük Görevler -->
+                <div class="widget-card glass">
+                    <h3 class="widget-title">
+                        <i data-lucide="check-square" style="color: var(--pastel-blue);"></i> Günlük Görevler
+                    </h3>
+                    <div id="tasks-list" class="tasks-list">
+                        <!-- JS ile dolacak -->
+                    </div>
+                </div>
+
+                <!-- Orta Kart: İstatistikler ve İlerleme Barı -->
+                <div class="widget-card glass">
+                    <h3 class="widget-title">
+                        <i data-lucide="sparkles" style="color: var(--pastel-yellow);"></i> Gelişim Durumum
+                    </h3>
+                    <div class="stats-container">
+                        <div class="stats-summary">
+                            <div class="stat-box stars">
+                                <div id="stat-stars" class="stat-val">0</div>
+                                <div class="stat-lbl">Toplanan Yıldız</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="stat-completed" class="stat-val">0</div>
+                                <div class="stat-lbl">Biten Oyun</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="stat-score" class="stat-val">0</div>
+                                <div class="stat-lbl">Toplam Puan</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="stat-streak" class="stat-val">0</div>
+                                <div class="stat-lbl">Aktif Seri (Gün)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="progress-header">
+                                <span>Günlük Görev İlerlemesi</span>
+                                <span id="progress-percent">%0</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div id="progress-fill" class="progress-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ Kart: Başarı Rozetleri -->
+                <div class="widget-card glass">
+                    <h3 class="widget-title">
+                        <i data-lucide="award" style="color: var(--pastel-purple);"></i> Rozet Dolabım
+                    </h3>
+                    <div id="badge-cabinet" class="badges-grid">
+                        <!-- JS ile dolacak -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================================================
+           TANITIM KARTLARI BÖLÜMÜ (PROMOTIONAL CARDS)
+           ========================================================================== -->
+        <section class="promo-section">
+            <div class="promo-grid">
+                <!-- Bugünün Rozeti -->
+                <div class="promo-card glass" style="border-left: 6px solid var(--pastel-yellow);">
+                    <span class="promo-card-tag">ROZET</span>
+                    <h3 class="promo-card-title">Günün Rozeti</h3>
+                    <p class="promo-card-content">"Hızlı Düşünür" rozetini kazanmak için refleks oyununda rekor süreyi aşman gerekiyor.</p>
+                    <div class="promo-card-footer">
+                        <span class="skill-tag">Refleks</span>
+                        <span style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">⚡</span>
+                    </div>
+                </div>
+
+                <!-- Haftanın Meydan Okuması -->
+                <div class="promo-card glass" style="border-left: 6px solid var(--pastel-orange);">
+                    <span class="promo-card-tag">MEYDAN OKUMA</span>
+                    <h3 class="promo-card-title">Haftanın Yarışı</h3>
+                    <p class="promo-card-content">Hafıza Kartları kategorisinde 3 gün üst üste 1000 puan al ve "Dev Hafıza" rozetini kap!</p>
+                    <div class="promo-card-footer">
+                        <span class="skill-tag">Hafıza & Sabır</span>
+                        <span style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">👑</span>
+                    </div>
+                </div>
+
+                <!-- En Popüler Oyunlar -->
+                <div class="promo-card glass" style="border-left: 6px solid var(--pastel-blue);">
+                    <span class="promo-card-tag">POPÜLER</span>
+                    <h3 class="promo-card-title">En Sevilen Oyun</h3>
+                    <p class="promo-card-content">Hafıza Kartları bu hafta en çok oynanan ve en çok yıldız kazandıran oyun seçildi!</p>
+                    <div class="promo-card-footer">
+                        <span class="skill-tag">Hafıza</span>
+                        <span style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">🎮</span>
+                    </div>
+                </div>
+
+                <!-- Yeni Eklenecek Oyunlar -->
+                <div class="promo-card glass" style="border-left: 6px solid var(--pastel-pink);">
+                    <span class="promo-card-tag">YAKINDA</span>
+                    <h3 class="promo-card-title">Yeni Eklenenler</h3>
+                    <p class="promo-card-content">Önümüzdeki hafta "Matematik Dehası" ve "Kelime Avcısı" oyunları platformumuza eklenecek!</p>
+                    <div class="promo-card-footer">
+                        <span class="skill-tag">Matematik & Kelime</span>
+                        <span style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">🚀</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==========================================================================
+       MODAL PENCERELER (MODAL DIALOGS)
+       ========================================================================== -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-container glass">
+            <!-- Modal Başlık Alanı -->
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title">Oyun Adı</h3>
+                <button id="btn-close-modal" class="btn-close-modal" aria-label="Kapat">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <!-- Modal İçerik Alanı -->
+            <div id="modal-body" class="modal-body">
+                <!-- İçerik JS ile doldurulacak -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+       ALT BİLGİ (FOOTER)
+       ========================================================================== -->
+    <footer class="footer glass">
+        <div class="footer-grid">
+            <!-- Kurum/Platform Bilgisi -->
+            <div class="footer-info">
+                <div class="footer-brand">
+                    <svg class="footer-logo" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="#CAFFBF" stroke="#1F2937" stroke-width="4" />
+                        <path d="M35,50 Q50,30 65,50 C65,65 50,75 50,75 C50,75 35,65 35,50 Z" fill="#FDFFB6" stroke="#1F2937" stroke-width="3" />
+                    </svg>
+                    <span class="footer-title">Zeka Diyarı</span>
+                </div>
+                <p class="footer-desc">
+                    Zeka Diyarı, 6-12 yaş grubu çocukların bilişsel gelişimlerini destekleyen eğlenceli, güvenli ve çocuk dostu bir zeka oyunları portalıdır.
+                </p>
+            </div>
+
+            <!-- Sayfa Bağlantıları -->
+            <div>
+                <h3 class="footer-links-title">Kategoriler</h3>
+                <ul class="footer-links-list">
+                    <li><a href="#categories-section" class="footer-link">Hafıza Oyunları</a></li>
+                    <li><a href="#categories-section" class="footer-link">Mantık Oyunları</a></li>
+                    <li><a href="#categories-section" class="footer-link">Matematik Oyunları</a></li>
+                    <li><a href="#categories-section" class="footer-link">Refleks Oyunları</a></li>
+                </ul>
+            </div>
+
+            <!-- Kurumsal Bağlantılar -->
+            <div>
+                <h3 class="footer-links-title">Destek & Bilgi</h3>
+                <ul class="footer-links-list">
+                    <li><a href="#" class="footer-link">Sıkça Sorulan Sorular</a></li>
+                    <li><a href="#" class="footer-link">Kullanım Şartları</a></li>
+                    <li><a href="#" class="footer-link">Gizlilik Politikası</a></li>
+                    <li><a href="#" class="footer-link">İletişim</a></li>
+                </ul>
+            </div>
+
+            <!-- Ebeveyn Bilgilendirme -->
+            <div class="parent-info-card">
+                <h3 class="parent-info-title">
+                    <i data-lucide="shield-check" style="color: var(--pastel-green); width: 18px; height: 18px;"></i> Ebeveyn Notu
+                </h3>
+                <p class="parent-info-text">
+                    Platformumuz tamamen reklamsız ve çocuk güvenliğine uygun olarak tasarlanmıştır. Oyunlarımız çocukların hafıza, mantıksal düşünme ve odaklanma becerilerini eğlenerek pekiştirmelerine yardımcı olur.
+                </p>
+            </div>
+        </div>
+
+        <!-- Alt Telif Hakkı ve Sosyal Medya -->
+        <div class="footer-bottom">
+            <p class="copyright">&copy; 2026 Zeka Diyarı. Tüm hakları saklıdır. Sevgiyle tasarlandı.</p>
+            <div class="social-icons">
+                <a href="#" class="btn-icon" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+                <a href="#" class="btn-icon" aria-label="Twitter"><i data-lucide="twitter"></i></a>
+                <a href="#" class="btn-icon" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+                <a href="#" class="btn-icon" aria-label="Youtube"><i data-lucide="youtube"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Lucide İkon Kütüphanesi CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Platform Veri ve Kontrol Dosyaları -->
+    <script src="js/gamesData.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
