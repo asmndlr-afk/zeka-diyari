@@ -12,118 +12,21 @@ document.addEventListener("DOMContentLoaded", () => {
     let audioCtx = null;
     let activeGameTimer = null; // Aktif oyun süre sayacı
     // Global Can (Hearts) Durumu
-    let globalHeartsState = {
-        hearts: 3,
-        lastHeartLostTime: null
-    };
-
-    function loadHeartsState() {
-        const saved = localStorage.getItem("globalHeartsState");
-        if (saved) {
-            try {
-                globalHeartsState = JSON.parse(saved);
-            } catch (e) {
-                console.error("Hearts state parse error", e);
-            }
-        }
-        updateHeartsRegen();
+    // Oyun Bazlı Can (Hearts) Durumu
+    function getGameHeartsState(gameId) {
+        const allStates = JSON.parse(localStorage.getItem("zeka_diyari_game_hearts") || "{}");
+        return allStates[gameId] || { lockedUntil: 0 };
     }
 
-    function saveHeartsState() {
-        localStorage.setItem("globalHeartsState", JSON.stringify(globalHeartsState));
+    function saveGameHeartsState(gameId, state) {
+        const allStates = JSON.parse(localStorage.getItem("zeka_diyari_game_hearts") || "{}");
+        allStates[gameId] = state;
+        localStorage.setItem("zeka_diyari_game_hearts", JSON.stringify(allStates));
     }
 
-    function updateHeartsRegen() {
-        if (globalHeartsState.hearts >= 3) {
-            globalHeartsState.hearts = 3;
-            globalHeartsState.lastHeartLostTime = null;
-            saveHeartsState();
-            renderHeartsUI();
-            return;
-        }
-
-        if (globalHeartsState.lastHeartLostTime) {
-            const now = Date.now();
-            const diffMs = now - globalHeartsState.lastHeartLostTime;
-            const diffMins = diffMs / (1000 * 60);
-
-            if (diffMins >= 15) {
-                globalHeartsState.hearts = 3;
-                globalHeartsState.lastHeartLostTime = null;
-            } else {
-                const heartsToAdd = Math.floor(diffMins / 5);
-                if (heartsToAdd > 0) {
-                    globalHeartsState.hearts = Math.min(3, globalHeartsState.hearts + heartsToAdd);
-                    if (globalHeartsState.hearts >= 3) {
-                        globalHeartsState.lastHeartLostTime = null;
-                    } else {
-                        globalHeartsState.lastHeartLostTime += heartsToAdd * 5 * 60 * 1000;
-                    }
-                }
-            }
-            saveHeartsState();
-        }
-        renderHeartsUI();
+    function lockGame(gameId) {
+        saveGameHeartsState(gameId, { lockedUntil: Date.now() + 5 * 60 * 1000 });
     }
-
-    function useHeart() {
-        updateHeartsRegen();
-        if (globalHeartsState.hearts > 0) {
-            if (globalHeartsState.hearts === 3) {
-                globalHeartsState.lastHeartLostTime = Date.now();
-            }
-            globalHeartsState.hearts--;
-            saveHeartsState();
-            renderHeartsUI();
-            return true;
-        }
-        return false;
-    }
-
-    function addHeart() {
-        updateHeartsRegen();
-        if (globalHeartsState.hearts < 3) {
-            globalHeartsState.hearts++;
-            if (globalHeartsState.hearts >= 3) {
-                globalHeartsState.lastHeartLostTime = null;
-            } else {
-                globalHeartsState.lastHeartLostTime += 5 * 60 * 1000;
-            }
-            saveHeartsState();
-            renderHeartsUI();
-        }
-    }
-
-    function renderHeartsUI() {
-        const heartsValEl = document.getElementById("header-hearts-val");
-        const heartsTimerEl = document.getElementById("header-hearts-timer");
-
-        if (heartsValEl) {
-            heartsValEl.innerText = globalHeartsState.hearts;
-        }
-
-        if (heartsTimerEl) {
-            if (globalHeartsState.hearts < 3 && globalHeartsState.lastHeartLostTime) {
-                heartsTimerEl.style.display = "inline";
-                const now = Date.now();
-                const elapsedMs = now - globalHeartsState.lastHeartLostTime;
-                const nextHeartMs = (5 * 60 * 1000) - (elapsedMs % (5 * 60 * 1000));
-                
-                const mins = Math.max(0, Math.floor(nextHeartMs / (60 * 1000)));
-                const secs = Math.max(0, Math.floor((nextHeartMs % (60 * 1000)) / 1000));
-                
-                heartsTimerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            } else {
-                heartsTimerEl.style.display = "none";
-            }
-        }
-    }
-
-    // Başlangıçta can durumunu yükle ve saniyede bir güncelle
-    loadHeartsState();
-    setInterval(() => {
-        updateHeartsRegen();
-    }, 1000);
 
 
     // 2. DOM Elemanları (DOM Elements)
@@ -608,33 +511,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 13. Oyun Başlatma / Kilitli Oyun Simülasyonu ve Gerçek Oyun Mantığı
     function handleGameLaunch(game) {
-        // Can Kontrolü
-        updateHeartsRegen();
-        if (globalHeartsState.hearts <= 0) {
+        // Can Kontrolü (Oyuna Özel)
+        const heartsState = getGameHeartsState(game.id);
+        const now = Date.now();
+        if (heartsState.lockedUntil && heartsState.lockedUntil > now) {
             playSound('locked');
-            
-            const now = Date.now();
-            const elapsedMs = now - globalHeartsState.lastHeartLostTime;
-            const nextHeartMs = (5 * 60 * 1000) - (elapsedMs % (5 * 60 * 1000));
+            const nextHeartMs = heartsState.lockedUntil - now;
             const mins = Math.max(0, Math.floor(nextHeartMs / (60 * 1000)));
             const secs = Math.max(0, Math.floor((nextHeartMs % (60 * 1000)) / 1000));
             const timerStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
             
-            showModal("Canın Kalmadı! 😢", `
-                <div style="text-align:center; padding:20px 10px;">
+            showModal("Canların Tükendi! 😢", `
+                <div style="text-align:center; padding:20px 10px; user-select:none;">
                     <div style="font-size:4.5rem; margin-bottom:15px; animation:bounce-loop 2s infinite ease-in-out;">❤️⏳</div>
-                    <h3 style="font-size:1.4rem; color:var(--text-main); margin-bottom:10px;">Oynamak İçin Can Gerekiyor!</h3>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:20px; line-height:1.6;">
-                        Şu anda hiç canın kalmadı. Her 5 dakikada 1 can kazanacaksın. 
-                        Tüm canlarının dolması için 15 dakika bekleyebilir veya yakında gelecek reklam izleme özelliğiyle anında can yükleyebilirsin!
+                    <h3 style="font-size:1.4rem; color:var(--text-main); margin-bottom:10px;">Bu Oyun İçin Canının Dolması Gerekiyor!</h3>
+                    <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:20px; line-height:1.6; max-width:320px; margin-left:auto; margin-right:auto;">
+                        Bu oyundaki tüm canların bitti. Canların 5 dakika içinde yenilenecektir. Bu sırada diğer oyunlarimizi oynayabilirsin!
                     </p>
                     <div style="display:inline-block; font-size:1.6rem; font-family:var(--font-heading); color:#ef4444; background:rgba(239, 68, 68, 0.1); padding:8px 20px; border-radius:15px; border:2px solid #ef4444; margin-bottom:20px; user-select:none;">
-                        Yeni Can İçin: <span id="modal-regen-timer">${timerStr}</span>
+                        Canların Yenilenmesine: <span id="modal-regen-timer">${timerStr}</span>
                     </div>
-                    <button class="btn btn-primary" id="btn-close-hearts-modal" style="width:100%;">Kapat</button>
+                    
+                    <div style="margin-bottom: 20px; max-width:300px; margin-left:auto; margin-right:auto;">
+                        <button class="btn btn-success" id="btn-modal-watch-ad" style="width:100%; padding:12px; font-weight:bold; font-size:1.05rem; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:16px; background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color:white; border:none; box-shadow:var(--shadow-medium); cursor:pointer;">
+                            🎬 Reklam İzle & Canları Doldur
+                        </button>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="btn-close-hearts-modal" style="width:100%; border-radius:16px;">Kapat</button>
                 </div>
             `);
             
+            const watchAdBtn = document.getElementById("btn-modal-watch-ad");
+            if (watchAdBtn) {
+                watchAdBtn.addEventListener("click", () => {
+                    playSound('success');
+                    saveGameHeartsState(game.id, { lockedUntil: 0 });
+                    closeModal();
+                    handleGameLaunch(game);
+                });
+            }
+
             const modalClose = document.getElementById("btn-close-hearts-modal");
             if (modalClose) {
                 modalClose.addEventListener("click", () => {
@@ -645,9 +562,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const modalTimerInterval = setInterval(() => {
                 const modalTimerEl = document.getElementById("modal-regen-timer");
                 if (modalTimerEl) {
-                    const elapsed = Date.now() - globalHeartsState.lastHeartLostTime;
-                    const next = (5 * 60 * 1000) - (elapsed % (5 * 60 * 1000));
-                    if (next <= 0 || globalHeartsState.hearts > 0) {
+                    const next = heartsState.lockedUntil - Date.now();
+                    if (next <= 0) {
                         clearInterval(modalTimerInterval);
                         closeModal();
                     } else {
@@ -661,9 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 1000);
             
             return;
-        }
-
-        if (game.locked) {
+        }        if (game.locked) {
             playSound('locked');
             const targetCard = Array.from(document.querySelectorAll(".game-card")).find(c => {
                 return c.querySelector(".game-play-btn").getAttribute("data-id") == game.id;
@@ -886,7 +800,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateLivesDisplay();
                     if (lives <= 0) {
                         if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
-                        useHeart();
+                        lockGame(1);
                         playSound('locked');
                         setTimeout(() => {
                             container.innerHTML = `
@@ -1044,6 +958,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const cfg = LEVELS[levelNumber - 1];
 
         let poppedCount = 0;
+        let lastColorName = "";
+        let consecutiveColorCount = 0;
         let lives = 3;
         let gameTime = 0;
         let spawnTimer = null;
@@ -1054,10 +970,10 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = `
             <div class="balloon-game-container" style="user-select:none;">
                 <div class="level-tabs">${tabsHTML}</div>
-                <div class="balloon-target-card" style="background:${cfg.color};">
-                    <span style="font-size:1.4rem;">🎯 Hedef:</span>
-                    <strong style="color:${cfg.targetColorHex}; font-size:1.5rem; text-transform:uppercase;">
-                        ${cfg.targetColor} (${cfg.targetCount} tane)
+                <div class="balloon-target-card" style="background:rgba(255,255,255,0.7); border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-small);">
+                    <span style="font-size:0.95rem; font-weight:700; color:var(--text-muted);">🎯 Hedef:</span>
+                    <strong style="color:${cfg.targetColorHex}; font-size:1.1rem; text-transform:uppercase; background:${cfg.targetColorHex}12; padding:3px 10px; border-radius:999px;">
+                        ${cfg.targetColor} (${cfg.targetCount} Adet)
                     </strong>
                 </div>
                 <div class="game-stats">
@@ -1136,10 +1052,21 @@ document.addEventListener("DOMContentLoaded", () => {
             balloon.className = "balloon-bubble";
 
             let selectedColor;
-            if (Math.random() < 0.45) {
-                selectedColor = cfg.balloonColors.find(c => c.name === cfg.targetColor) || cfg.balloonColors[0];
+            let attempts = 0;
+            do {
+                if (Math.random() < 0.45) {
+                    selectedColor = cfg.balloonColors.find(c => c.name === cfg.targetColor) || cfg.balloonColors[0];
+                } else {
+                    selectedColor = cfg.balloonColors[Math.floor(Math.random() * cfg.balloonColors.length)];
+                }
+                attempts++;
+            } while (selectedColor.name === lastColorName && consecutiveColorCount >= 2 && attempts < 15);
+
+            if (selectedColor.name === lastColorName) {
+                consecutiveColorCount++;
             } else {
-                selectedColor = cfg.balloonColors[Math.floor(Math.random() * cfg.balloonColors.length)];
+                lastColorName = selectedColor.name;
+                consecutiveColorCount = 1;
             }
 
             balloon.style.background = `radial-gradient(circle at 30% 30%, #ffffff 0%, ${selectedColor.hex} 40%, rgba(0,0,0,0.3) 100%)`;
@@ -1236,7 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameOver() {
             cleanUp();
-            useHeart();
+            lockGame(2);
             playSound('locked');
 
             setTimeout(() => {
@@ -1626,7 +1553,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameOver() {
             cleanUp();
-            useHeart();
+            lockGame(3);
             playSound('locked');
 
             setTimeout(() => {
@@ -1971,7 +1898,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function gameOver() {
             cleanUp();
-            useHeart();
+            lockGame(4);
             playSound('locked');
 
             setTimeout(() => {
@@ -2367,7 +2294,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 600);
 
             } else {
-                useHeart();
+                lockGame(5);
                 playSound('locked');
                 setTimeout(() => {
                     container.innerHTML = `
@@ -2723,7 +2650,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }, 600);
             } else {
-                useHeart();
+                lockGame(6);
                 playSound('locked');
                 
                 setTimeout(() => {
@@ -3015,7 +2942,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }, 600);
             } else {
-                useHeart();
+                lockGame(7);
                 playSound('locked');
                 setTimeout(() => {
                     container.innerHTML = `
@@ -3104,12 +3031,19 @@ document.addEventListener("DOMContentLoaded", () => {
         let currentQuestion = null;
         let questionTimer = null;
         let remainingTime = cfg.speed;
+        let shuffledQuestions = [];
+        let questionIndex = 0;
 
         const tabsHTML = LEVELS.map(l => '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px;">' + l.level + '</button>').join('');
 
         function loadQuestion() {
             remainingTime = cfg.speed;
-            currentQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
+            if (shuffledQuestions.length === 0 || questionIndex >= shuffledQuestions.length) {
+                shuffledQuestions = [...questionsPool].sort(() => Math.random() - 0.5);
+                questionIndex = 0;
+            }
+            currentQuestion = shuffledQuestions[questionIndex];
+            questionIndex++;
             renderQuestion();
             startQuestionCountdown();
         }
@@ -3128,7 +3062,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <!-- Hearts -->
                         </div>
                         <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                            Skor: <span style="color:#D97706;">\${score}/	ext{\${cfg.targetScore}}</span>
+                            Skor: <span style="color:#D97706;">\${score}/\${cfg.targetScore}</span>
                         </div>
                     </div>
 
@@ -3351,7 +3285,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }, 600);
             } else {
-                useHeart();
+                lockGame(8);
                 playSound('locked');
 
                 setTimeout(() => {
@@ -3606,7 +3540,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }, 600);
             } else {
-                useHeart();
+                lockGame(9);
                 playSound('locked');
                 setTimeout(() => {
                     container.innerHTML = `
@@ -3911,7 +3845,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 600);
 
             } else {
-                useHeart();
+                lockGame(10);
                 playSound('locked');
                 setTimeout(() => {
                     container.innerHTML = `
