@@ -21,7 +21,12 @@ const ASSETS_TO_CACHE = [
   "./assets/images/avatars/panda.png",
   "./assets/images/avatars/cat.png",
   "./assets/images/avatars/dog.png",
-  "./assets/images/avatars/rabbit.png"
+  "./assets/images/avatars/rabbit.png",
+  "./assets/images/labirent_macerasi.jpg",
+  "./assets/images/golge_esleme.jpg",
+  "./assets/images/dogru_mu_yanlis_mi.jpg",
+  "./assets/images/sayi_avi.jpg",
+  "./assets/images/ritmik_hafiza.jpg"
 ];
 
 // Install Event: Pre-cache static assets

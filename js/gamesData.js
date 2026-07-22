@@ -125,12 +125,92 @@ gamesList.push({
     locked: false
 });
 
-// 6 - 100. Oyunlar (Çok Yakında / Kilitli)
+// 6. Oyun: Labirent Macerası
+gamesList.push({
+    id: 6,
+    name: "Labirent Macerası",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#D8BBFF",
+    icon: "puzzle",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Akıl Yürütme", "Problem Çözme", "Planlama"],
+    desc: "Sevimli tavşanı yön tuşlarıyla labirentin sonundaki lezzetli havuca ulaştır!",
+    image: "assets/images/labirent_macerasi.jpg",
+    locked: false
+});
+
+// 7. Oyun: Gölge Eşleme
+gamesList.push({
+    id: 7,
+    name: "Gölge Eşleme",
+    category: "Görsel Algı",
+    categoryClass: "gorsel",
+    color: "#CAFFBF",
+    icon: "eye",
+    age: "6-10 yaş",
+    difficulty: "Kolay",
+    skills: ["Şekil Zemin Ayrımı", "Renk Algısı", "Görsel Bütünleme"],
+    desc: "Üstte gösterilen sevimli nesnenin gölgesini alttaki kartlar arasından bul ve eşleştir!",
+    image: "assets/images/golge_esleme.jpg",
+    locked: false
+});
+
+// 8. Oyun: Doğru mu Yanlış mı?
+gamesList.push({
+    id: 8,
+    name: "Doğru mu Yanlış mı?",
+    category: "Dikkat Oyunları",
+    categoryClass: "dikkat",
+    color: "#FFD6A5",
+    icon: "search",
+    age: "6-12 yaş",
+    difficulty: "Kolay",
+    skills: ["Hızlı Karar Verme", "Odaklanma", "Seçici Dikkat"],
+    desc: "Ekrana gelen resim ve cümlenin birbiriyle uyumlu olup olmadığını doğru/yanlış butonlarıyla bil!",
+    image: "assets/images/dogru_mu_yanlis_mi.jpg",
+    locked: false
+});
+
+// 9. Oyun: Hızlı Sayma
+gamesList.push({
+    id: 9,
+    name: "Hızlı Sayma",
+    category: "Matematik Oyunları",
+    categoryClass: "matematik",
+    color: "#FDFFB6",
+    icon: "calculator",
+    age: "7-12 yaş",
+    difficulty: "Orta",
+    skills: ["Sayı Sıralama", "Zihinden İşlem", "Hızlı Odaklanma"],
+    desc: "Ekranda karışık halde duran sayıları en hızlı şekilde 1'den başlayarak sırasıyla tıklayıp topla!",
+    image: "assets/images/sayi_avi.jpg",
+    locked: false
+});
+
+// 10. Oyun: Ritmik Hafıza
+gamesList.push({
+    id: 10,
+    name: "Ritmik Hafıza",
+    category: "Hafıza Oyunları",
+    categoryClass: "hafiza",
+    color: "#A0C4FF",
+    icon: "brain",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Sıralı Hatırlama", "Kısa Süreli Bellek", "Ses/Işık Takibi"],
+    desc: "4 renkli sevimli butonun çıkardığı ritmi ve ışık sırasını aklında tut, sırayla basarak tekrarla!",
+    image: "assets/images/ritmik_hafiza.jpg",
+    locked: false
+});
+
+// 11 - 100. Oyunlar (Çok Yakında / Kilitli)
 const categoriesKeys = Object.keys(categoriesConfig);
 const ages = ["6-8 yaş", "8-10 yaş", "10-12 yaş", "6-12 yaş"];
 const difficulties = ["Kolay", "Orta", "Zor"];
 
-for (let i = 6; i <= 100; i++) {
+for (let i = 11; i <= 100; i++) {
     const category = categoriesKeys[i % categoriesKeys.length];
     const categoryInfo = categoriesConfig[category];
     const titleBase = gameTitles[(i - 5) % gameTitles.length];

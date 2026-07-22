@@ -542,6 +542,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 startWordGame(modalBodyElement, 1);
             } else if (game.id === 5) {
                 startFastFingersGame(modalBodyElement, 1);
+            } else if (game.id === 6) {
+                startMazeGame(modalBodyElement, 1);
+            } else if (game.id === 7) {
+                startShadowGame(modalBodyElement, 1);
+            } else if (game.id === 8) {
+                startTrueFalseGame(modalBodyElement, 1);
+            } else if (game.id === 9) {
+                startNumberChaseGame(modalBodyElement, 1);
+            } else if (game.id === 10) {
+                startRhythmicMemoryGame(modalBodyElement, 1);
             }
         }, 2200);
     }
@@ -2273,8 +2283,1120 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 100);
     }
 
+    // ============================================================
+    // LABİRENT MACERASI (MANTIK) OYUN MOTORU
+    // ============================================================
+    function startMazeGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
 
+        const LEVELS = [
+            { level: 1, name: "Tavşanın Bahçesi", emoji: "🐰", size: 6, scoreBase: 50, color: "#CAFFBF" },
+            { level: 2, name: "Gizli Geçit", emoji: "🥕", size: 7, scoreBase: 100, color: "#A0C4FF" },
+            { level: 3, name: "Büyük Macera", emoji: "🌟", size: 8, scoreBase: 150, color: "#FFD6A5" },
+            { level: 4, name: "Karışık Patika", emoji: "🔥", size: 9, scoreBase: 200, color: "#D8BBFF" },
+            { level: 5, name: "Labirent Kralı", emoji: "👑", size: 10, scoreBase: 300, color: "#FFC6FF" }
+        ];
 
+        const cfg = LEVELS[levelNumber - 1];
+        const N = cfg.size;
+        let playerPos = { r: 0, c: 0 };
+        let targetPos = { r: N - 1, c: N - 1 };
+        let gameActive = true;
+        let timeElapsed = 0;
+        let grid = [];
+        
+        function generateSolvableMaze() {
+            while (true) {
+                grid = [];
+                for (let r = 0; r < N; r++) {
+                    grid.push([]);
+                    for (let c = 0; c < N; c++) {
+                        if ((r === 0 && c === 0) || (r === N - 1 && c === N - 1)) {
+                            grid[r].push(0);
+                        } else {
+                            grid[r].push(Math.random() < 0.28 ? 1 : 0);
+                        }
+                    }
+                }
+                
+                let queue = [[0, 0]];
+                let visited = new Set(["0,0"]);
+                let solvable = false;
+                
+                while (queue.length > 0) {
+                    let [currR, currC] = queue.shift();
+                    if (currR === N - 1 && currC === N - 1) {
+                        solvable = true;
+                        break;
+                    }
+                    
+                    const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+                    for (let [dr, dc] of dirs) {
+                        let nr = currR + dr;
+                        let nc = currC + dc;
+                        if (nr >= 0 && nr < N && nc >= 0 && nc < N && grid[nr][nc] === 0) {
+                            let key = `${nr},${nc}`;
+                            if (!visited.has(key)) {
+                                visited.add(key);
+                                queue.push([nr, nc]);
+                            }
+                        }
+                    }
+                }
+                
+                if (solvable) break;
+            }
+        }
+        
+        generateSolvableMaze();
+
+        container.innerHTML = `
+            <div class="maze-game" style="text-align:center; padding:10px 0; user-select:none;">
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:rgba(0,0,0,0.03); padding:8px 12px; border-radius:12px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.9rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.9rem;">
+                        Süre: <span id="maze-timer" style="color:#ef4444;">0</span>sn
+                    </div>
+                </div>
+
+                <div class="maze-board-wrapper" style="padding:10px; background:rgba(0,0,0,0.02); border-radius:20px; display:inline-block; border:2px solid rgba(0,0,0,0.05);">
+                    <div class="maze-board" style="display:grid; grid-template-columns:repeat(${N}, 1fr); gap:4px; width:280px; height:280px; margin:0 auto;">
+                        ${Array.from({ length: N * N }).map((_, idx) => {
+                            const r = Math.floor(idx / N);
+                            const c = idx % N;
+                            let cellBg = "var(--bg-card)";
+                            let content = "";
+                            
+                            if (grid[r][c] === 1) {
+                                cellBg = "#374151";
+                            } else if (r === playerPos.r && c === playerPos.c) {
+                                content = "🐰";
+                            } else if (r === targetPos.r && c === targetPos.c) {
+                                content = "🥕";
+                            }
+                            
+                            return `
+                                <div class="maze-cell" data-r="${r}" data-c="${c}" style="background:${cellBg}; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; transition:background 0.2s ease; border: 1px solid rgba(0,0,0,0.03);">
+                                    ${content}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div class="maze-controls" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; max-width:180px; margin:15px auto 5px;">
+                    <div></div>
+                    <button class="btn btn-primary btn-icon" id="maze-up" style="width:50px; height:50px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-up"></i></button>
+                    <div></div>
+                    <button class="btn btn-primary btn-icon" id="maze-left" style="width:50px; height:50px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-left"></i></button>
+                    <button class="btn btn-success btn-icon" id="maze-center" style="width:50px; height:50px; border-radius:50%; margin:0 auto; cursor:default; pointer-events:none;"><i data-lucide="smile"></i></button>
+                    <button class="btn btn-primary btn-icon" id="maze-right" style="width:50px; height:50px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-right"></i></button>
+                    <div></div>
+                    <button class="btn btn-primary btn-icon" id="maze-down" style="width:50px; height:50px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-down"></i></button>
+                    <div></div>
+                </div>
+            </div>
+        `;
+
+        lucide.createIcons();
+
+        const handleKeyDown = (e) => {
+            if (!gameActive) return;
+            let dr = 0, dc = 0;
+            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") dr = -1;
+            else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") dr = 1;
+            else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") dc = -1;
+            else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") dc = 1;
+            
+            if (dr !== 0 || dc !== 0) {
+                e.preventDefault();
+                movePlayer(dr, dc);
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+
+        container.querySelector("#maze-up").addEventListener("click", () => movePlayer(-1, 0));
+        container.querySelector("#maze-down").addEventListener("click", () => movePlayer(1, 0));
+        container.querySelector("#maze-left").addEventListener("click", () => movePlayer(0, -1));
+        container.querySelector("#maze-right").addEventListener("click", () => movePlayer(0, 1));
+
+        function movePlayer(dr, dc) {
+            if (!gameActive) return;
+            
+            const nr = playerPos.r + dr;
+            const nc = playerPos.c + dc;
+            
+            if (nr >= 0 && nr < N && nc >= 0 && nc < N && grid[nr][nc] === 0) {
+                const oldCell = container.querySelector(`.maze-cell[data-r="${playerPos.r}"][data-c="${playerPos.c}"]`);
+                if (oldCell) oldCell.innerHTML = "";
+                
+                playerPos.r = nr;
+                playerPos.c = nc;
+                
+                const newCell = container.querySelector(`.maze-cell[data-r="${playerPos.r}"][data-c="${playerPos.c}"]`);
+                if (newCell) {
+                    newCell.innerHTML = "🐰";
+                    newCell.style.transform = "scale(1.15)";
+                    setTimeout(() => { newCell.style.transform = "scale(1)"; }, 150);
+                }
+                
+                playSound('click');
+                
+                if (playerPos.r === targetPos.r && playerPos.c === targetPos.c) {
+                    endGame();
+                }
+            } else {
+                playSound('locked');
+                const board = container.querySelector(".maze-board");
+                if (board) {
+                    board.style.animation = "shake 0.3s ease";
+                    setTimeout(() => { board.style.animation = ""; }, 300);
+                }
+            }
+        }
+
+        activeGameTimer = setInterval(() => {
+            timeElapsed++;
+            const timerEl = container.querySelector("#maze-timer");
+            if (timerEl) timerEl.innerText = timeElapsed;
+            else {
+                document.removeEventListener("keydown", handleKeyDown);
+                clearInterval(activeGameTimer);
+            }
+        }, 1000);
+
+        function endGame() {
+            gameActive = false;
+            document.removeEventListener("keydown", handleKeyDown);
+            clearInterval(activeGameTimer);
+            playSound('success');
+
+            const scoreAwarded = cfg.scoreBase + Math.max(0, 200 - timeElapsed * 4);
+            const starsAwarded = timeElapsed < 15 ? 25 : (timeElapsed < 30 ? 15 : 10);
+
+            const ach = window.achievementsData;
+            ach.userStats.stars += starsAwarded;
+            ach.userStats.totalScore += scoreAwarded;
+            ach.userStats.completedGames += 1;
+
+            const task1 = ach.dailyTasks.find(t => t.id === 1);
+            if (task1 && !task1.completed) {
+                task1.completed = true;
+                ach.userStats.stars += task1.reward;
+            }
+
+            const done = ach.dailyTasks.filter(t => t.completed).length;
+            ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:16px 8px;">
+                        <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🥕🐰🏆</div>
+                        <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Labirent Kaşifi!</div>
+                        <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                            Labirenti <strong>${timeElapsed} saniyede</strong> bitirdin!
+                        </p>
+                        
+                        <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                            </div>
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                            ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                            <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                        </div>
+                    </div>
+                `;
+
+                container.querySelector("#btn-replay").addEventListener("click", () => {
+                    playSound('click');
+                    startMazeGame(container, levelNumber);
+                });
+                if (levelNumber < 5) {
+                    container.querySelector("#btn-next-level").addEventListener("click", () => {
+                        playSound('click');
+                        startMazeGame(container, levelNumber + 1);
+                    });
+                }
+                container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                    renderAchievements();
+                });
+            }, 600);
+        }
+    }
+
+    // ============================================================
+    // GÖLGE EŞLEME (GÖRSEL ALGI) OYUN MOTORU
+    // ============================================================
+    function startShadowGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
+
+        const LEVELS = [
+            { level: 1, name: "Hayvan Dostlar", targetScore: 5, color: "#CAFFBF", pool: ["🐼","🦊","🦁","🐰","🐮","🐷","🐸","🐙","🐒"] },
+            { level: 2, name: "Meyve Bahçesi", targetScore: 6, color: "#A0C4FF", pool: ["🍎","🍌","🍉","🍇","🍓","🍍","🍒","🥝","🍋"] },
+            { level: 3, name: "Eğlenceli Taşıtlar", targetScore: 7, color: "#FFD6A5", pool: ["🚗","🚀","🚲","✈️","🚂","🚁","🚢","🚜","⛵"] },
+            { level: 4, name: "Doğa Harikaları", targetScore: 8, color: "#D8BBFF", pool: ["🌲","🌻","🍄","🌈","☀️","⚡","❄️","🌙","🔥"] },
+            { level: 5, name: "Karışık Gölge", targetScore: 10, color: "#FFC6FF", pool: ["⚽","🎭","🎸","🎈","🎁","🍕","🍔","🍦","🍩"] }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let score = 0;
+        let incorrectCount = 0;
+        let gameTime = 0;
+        let currentTarget = "";
+        let choices = [];
+
+        function generateRound() {
+            currentTarget = cfg.pool[Math.floor(Math.random() * cfg.pool.length)];
+            
+            choices = [currentTarget];
+            while (choices.length < 3) {
+                const rand = cfg.pool[Math.floor(Math.random() * cfg.pool.length)];
+                if (!choices.includes(rand)) {
+                    choices.push(rand);
+                }
+            }
+            
+            choices.sort(() => Math.random() - 0.5);
+            renderRound();
+        }
+
+        function renderRound() {
+            container.innerHTML = `
+                <div class="shadow-game" style="text-align:center; padding:10px 0;">
+                    <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
+                        <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                            Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                        </div>
+                        <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                            Skor: <span style="color:#D97706;">${score}/${cfg.targetScore}</span>
+                        </div>
+                    </div>
+
+                    <div class="shadow-box" style="margin-bottom:25px; padding:20px; background:rgba(0,0,0,0.03); border-radius:24px; display:inline-block; border:3px dashed var(--text-muted);">
+                        <div class="shadow-icon" style="font-size: 5rem; filter: brightness(0); user-select: none;">
+                            ${currentTarget}
+                        </div>
+                        <div style="margin-top:10px; font-weight:700; color:var(--text-muted); font-size:0.85rem;">
+                            BU GÖLGE HANGİ EMOJİYE AİT? 🤔
+                        </div>
+                    </div>
+
+                    <div class="choices-container" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; max-width:280px; margin:0 auto 10px;">
+                        ${choices.map((emoji, idx) => `
+                            <button class="choice-btn card glass" data-emoji="${emoji}" style="font-size: 2.8rem; aspect-ratio: 1; border-radius:20px; display:flex; align-items:center; justify-content:center; transition:all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor:pointer;">
+                                ${emoji}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            container.querySelectorAll(".choice-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const chosen = btn.getAttribute("data-emoji");
+                    handleSelection(chosen, btn);
+                });
+                btn.addEventListener("mouseenter", () => {
+                    btn.style.transform = "scale(1.08)";
+                });
+                btn.addEventListener("mouseleave", () => {
+                    btn.style.transform = "scale(1)";
+                });
+            });
+        }
+
+        function handleSelection(chosen, btn) {
+            if (chosen === currentTarget) {
+                score++;
+                playSound('success');
+                btn.style.background = "var(--pastel-green)";
+                btn.style.borderColor = "#166534";
+                
+                const shadowIcon = container.querySelector(".shadow-icon");
+                if (shadowIcon) {
+                    shadowIcon.style.filter = "none";
+                    shadowIcon.style.transform = "scale(1.2) rotate(360deg)";
+                    shadowIcon.style.transition = "all 0.5s ease";
+                }
+
+                setTimeout(() => {
+                    if (score >= cfg.targetScore) {
+                        endGame();
+                    } else {
+                        generateRound();
+                    }
+                }, 750);
+
+            } else {
+                incorrectCount++;
+                playSound('locked');
+                btn.style.background = "var(--pastel-red)";
+                btn.style.borderColor = "#ef4444";
+                btn.style.animation = "shake 0.3s ease";
+                setTimeout(() => { btn.style.animation = ""; }, 300);
+            }
+        }
+
+        activeGameTimer = setInterval(() => {
+            gameTime++;
+        }, 1000);
+
+        function endGame() {
+            clearInterval(activeGameTimer);
+            playSound('success');
+
+            const scoreBase = 50 * levelNumber;
+            const scoreAwarded = scoreBase + Math.max(0, 150 - gameTime * 3);
+            const starsAwarded = incorrectCount === 0 ? 25 : (incorrectCount <= 2 ? 15 : 10);
+
+            const ach = window.achievementsData;
+            ach.userStats.stars += starsAwarded;
+            ach.userStats.totalScore += scoreAwarded;
+            ach.userStats.completedGames += 1;
+
+            const task1 = ach.dailyTasks.find(t => t.id === 1);
+            if (task1 && !task1.completed) {
+                task1.completed = true;
+                ach.userStats.stars += task1.reward;
+            }
+
+            const done = ach.dailyTasks.filter(t => t.completed).length;
+            ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:16px 8px;">
+                        <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🎨🏆</div>
+                        <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Gölge Avcısı!</div>
+                        <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                            Gölgeleri <strong>${gameTime} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile eşleştirdin!
+                        </p>
+                        
+                        <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                            </div>
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                            ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                            <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                        </div>
+                    </div>
+                `;
+
+                container.querySelector("#btn-replay").addEventListener("click", () => {
+                    playSound('click');
+                    startShadowGame(container, levelNumber);
+                });
+                if (levelNumber < 5) {
+                    container.querySelector("#btn-next-level").addEventListener("click", () => {
+                        playSound('click');
+                        startShadowGame(container, levelNumber + 1);
+                    });
+                }
+                container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                    renderAchievements();
+                });
+            }, 600);
+        }
+
+        generateRound();
+    }
+
+    // ============================================================
+    // DOĞRU MU YANLIŞ MI? (DİKKAT) OYUN MOTORU
+    // ============================================================
+    function startTrueFalseGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
+
+        const LEVELS = [
+            { level: 1, name: "Kolay Sorular", targetScore: 6, speed: 7, color: "#CAFFBF" },
+            { level: 2, name: "Meraklı Kaşif", targetScore: 7, speed: 6, color: "#A0C4FF" },
+            { level: 3, name: "Zihin Egzersizi", targetScore: 8, speed: 5.5, color: "#FFD6A5" },
+            { level: 4, name: "Hızlı Düşünür", targetScore: 9, speed: 5, color: "#D8BBFF" },
+            { level: 5, name: "Bilgi Şampiyonu", targetScore: 10, speed: 4.2, color: "#FFC6FF" }
+        ];
+
+        const questionsPool = [
+            { q: "Muz sarı renklidir. 🍌", a: true },
+            { q: "Kediler havlar. 🐱", a: false },
+            { q: "Elma bir meyvedir. 🍎", a: true },
+            { q: "Balıklar uçabilir. 🐟", a: false },
+            { q: "Güneş yeşil renklidir. ☀️", a: false },
+            { q: "Kurbağalar zıplar. 🐸", a: true },
+            { q: "Araba suyun altında sürülür. 🚗", a: false },
+            { q: "Karpuz yuvarlaktır. 🍉", a: true },
+            { q: "Uçaklar gökyüzünde uçar. ✈️", a: true },
+            { q: "İnekler süt verir. 🐄", a: true },
+            { q: "5 + 3 = 8 eder. 🔢", a: true },
+            { q: "4 - 1 = 2 eder. 🔢", a: false },
+            { q: "Filler uçabilir. 🐘", a: false },
+            { q: "Limon ekşidir. 🍋", a: true },
+            { q: "Kuşların kanatları vardır. 🐦", a: true },
+            { q: "Ateş soğuktur. 🔥", a: false },
+            { q: "Dondurma sıcaktır. 🍦", a: false },
+            { q: "Geceleri gökyüzünde Ay görünür. 🌙", a: true }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let score = 0;
+        let incorrectCount = 0;
+        let gameTime = 0;
+        let currentQuestion = null;
+        let questionTimer = null;
+        let remainingTime = cfg.speed;
+
+        function loadQuestion() {
+            remainingTime = cfg.speed;
+            currentQuestion = questionsPool[Math.floor(Math.random() * questionsPool.length)];
+            renderQuestion();
+            startQuestionCountdown();
+        }
+
+        function renderQuestion() {
+            container.innerHTML = `
+                <div class="true-false-game" style="text-align:center; padding:10px 0;">
+                    <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
+                        <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                            Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                        </div>
+                        <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                            Skor: <span style="color:#D97706;">${score}/${cfg.targetScore}</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-bg" style="height:10px; border-radius:5px; background:rgba(0,0,0,0.08); margin-bottom:20px; overflow:hidden;">
+                        <div id="time-bar" style="height:100%; background:var(--pastel-green); width:100%; transition:width 0.1s linear;"></div>
+                    </div>
+
+                    <div class="question-display card glass" style="margin-bottom:30px; padding:30px 15px; border-radius:24px; border:2px solid rgba(0,0,0,0.05); min-height:120px; display:flex; align-items:center; justify-content:center;">
+                        <h3 style="font-size:1.6rem; color:var(--text-main); line-height:1.5;">${currentQuestion.q}</h3>
+                    </div>
+
+                    <div class="decision-container" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; max-width:280px; margin:0 auto 10px;">
+                        <button class="btn btn-success" id="btn-true" style="padding:15px 0; border-radius:20px; font-size:1.2rem; font-weight:700;"><i data-lucide="check"></i> DOĞRU</button>
+                        <button class="btn btn-danger" id="btn-false" style="padding:15px 0; border-radius:20px; font-size:1.2rem; font-weight:700;"><i data-lucide="x"></i> YANLIŞ</button>
+                    </div>
+                </div>
+            `;
+
+            lucide.createIcons();
+
+            container.querySelector("#btn-true").addEventListener("click", () => evaluateAnswer(true));
+            container.querySelector("#btn-false").addEventListener("click", () => evaluateAnswer(false));
+        }
+
+        function startQuestionCountdown() {
+            if (questionTimer) clearInterval(questionTimer);
+            
+            const timeBar = container.querySelector("#time-bar");
+            questionTimer = setInterval(() => {
+                remainingTime -= 0.1;
+                if (timeBar) {
+                    const percentage = (remainingTime / cfg.speed) * 100;
+                    timeBar.style.width = `${percentage}%`;
+                    if (percentage < 30) {
+                        timeBar.style.background = "#ef4444";
+                    }
+                }
+                
+                if (remainingTime <= 0) {
+                    clearInterval(questionTimer);
+                    incorrectCount++;
+                    playSound('locked');
+                    shakeScreen();
+                    setTimeout(() => {
+                        loadQuestion();
+                    }, 500);
+                }
+            }, 100);
+        }
+
+        function evaluateAnswer(userAnswer) {
+            if (questionTimer) clearInterval(questionTimer);
+
+            const isCorrect = userAnswer === currentQuestion.a;
+            
+            const display = container.querySelector(".question-display");
+            if (isCorrect) {
+                score++;
+                playSound('success');
+                display.style.background = "var(--pastel-green)";
+                display.style.borderColor = "#166534";
+            } else {
+                incorrectCount++;
+                playSound('locked');
+                display.style.background = "var(--pastel-red)";
+                display.style.borderColor = "#ef4444";
+                shakeScreen();
+            }
+
+            setTimeout(() => {
+                if (score >= cfg.targetScore) {
+                    endGame();
+                } else {
+                    loadQuestion();
+                }
+            }, 600);
+        }
+
+        function shakeScreen() {
+            const display = container.querySelector(".question-display");
+            if (display) {
+                display.style.animation = "shake 0.35s ease";
+                setTimeout(() => { display.style.animation = ""; }, 350);
+            }
+        }
+
+        activeGameTimer = setInterval(() => {
+            gameTime++;
+        }, 1000);
+
+        function endGame() {
+            if (questionTimer) clearInterval(questionTimer);
+            clearInterval(activeGameTimer);
+            playSound('success');
+
+            const scoreBase = 50 * levelNumber;
+            const scoreAwarded = scoreBase + Math.max(0, 150 - gameTime * 3);
+            const starsAwarded = incorrectCount === 0 ? 25 : (incorrectCount <= 2 ? 15 : 10);
+
+            const ach = window.achievementsData;
+            ach.userStats.stars += starsAwarded;
+            ach.userStats.totalScore += scoreAwarded;
+            ach.userStats.completedGames += 1;
+
+            const task1 = ach.dailyTasks.find(t => t.id === 1);
+            if (task1 && !task1.completed) {
+                task1.completed = true;
+                ach.userStats.stars += task1.reward;
+            }
+
+            const done = ach.dailyTasks.filter(t => t.completed).length;
+            ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:16px 8px;">
+                        <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">✅🏆❌</div>
+                        <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Zeka Küpü!</div>
+                        <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                            Soruları <strong>${gameTime} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile tamamladın!
+                        </p>
+                        
+                        <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                            </div>
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                            ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                            <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                        </div>
+                    </div>
+                `;
+
+                container.querySelector("#btn-replay").addEventListener("click", () => {
+                    playSound('click');
+                    startTrueFalseGame(container, levelNumber);
+                });
+                if (levelNumber < 5) {
+                    container.querySelector("#btn-next-level").addEventListener("click", () => {
+                        playSound('click');
+                        startTrueFalseGame(container, levelNumber + 1);
+                    });
+                }
+                container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                    renderAchievements();
+                });
+            }, 600);
+        }
+
+        loadQuestion();
+    }
+
+    // ============================================================
+    // HIZLI SAYMA (MATEMATİK) OYUN MOTORU
+    // ============================================================
+    function startNumberChaseGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
+
+        const LEVELS = [
+            { level: 1, name: "1'den 9'a Kadar", size: 3, maxVal: 9, color: "#CAFFBF" },
+            { level: 2, name: "Sayı Dedektifi", size: 3, maxVal: 9, color: "#A0C4FF" },
+            { level: 3, name: "1'den 16'ya Saymaca", size: 4, maxVal: 16, color: "#FFD6A5" },
+            { level: 4, name: "Odaklanma Ustası", size: 4, maxVal: 16, color: "#D8BBFF" },
+            { level: 5, name: "Sayı Şampiyonu", size: 5, maxVal: 25, color: "#FFC6FF" }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let nextTarget = 1;
+        let timeElapsed = 0;
+        let incorrectCount = 0;
+        let gameActive = true;
+
+        let numbers = Array.from({ length: cfg.maxVal }, (_, idx) => idx + 1);
+        numbers.sort(() => Math.random() - 0.5);
+
+        container.innerHTML = `
+            <div class="number-chase-game" style="text-align:center; padding:10px 0; user-select:none;">
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Sıradaki Sayı: <span id="target-number" style="color:#D97706; font-size:1.1rem; font-weight:800;">1</span>
+                    </div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Süre: <span id="chase-timer" style="color:#ef4444;">0</span>sn
+                    </div>
+                </div>
+
+                <div style="padding:10px; background:rgba(0,0,0,0.02); border-radius:24px; display:inline-block; border:2px solid rgba(0,0,0,0.05);">
+                    <div class="number-grid" style="display:grid; grid-template-columns: repeat(${cfg.size}, 1fr); gap:10px; width:280px; height:280px; margin:0 auto;">
+                        ${numbers.map(num => `
+                            <button class="number-btn card glass" data-num="${num}" style="font-size:1.4rem; font-weight:800; border-radius:16px; border:2px solid rgba(0,0,0,0.05); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s ease;">
+                                ${num}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const targetEl = container.querySelector("#target-number");
+        const timerEl = container.querySelector("#chase-timer");
+
+        container.querySelectorAll(".number-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                if (!gameActive) return;
+                const num = parseInt(btn.getAttribute("data-num"));
+                
+                if (num === nextTarget) {
+                    playSound('click');
+                    btn.style.background = "var(--pastel-green)";
+                    btn.style.borderColor = "#166534";
+                    btn.style.color = "#FFFFFF";
+                    btn.style.transform = "scale(0.9)";
+                    btn.style.opacity = "0.7";
+                    btn.disabled = true;
+                    
+                    nextTarget++;
+                    
+                    if (nextTarget > cfg.maxVal) {
+                        endGame();
+                    } else {
+                        targetEl.innerText = nextTarget;
+                    }
+                } else {
+                    incorrectCount++;
+                    playSound('locked');
+                    btn.style.animation = "shake 0.3s ease";
+                    setTimeout(() => { btn.style.animation = ""; }, 300);
+                }
+            });
+        });
+
+        activeGameTimer = setInterval(() => {
+            timeElapsed++;
+            if (timerEl) timerEl.innerText = timeElapsed;
+            else clearInterval(activeGameTimer);
+        }, 1000);
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(activeGameTimer);
+            playSound('success');
+
+            const scoreBase = 50 * levelNumber;
+            const scoreAwarded = scoreBase + Math.max(0, 200 - timeElapsed * 4);
+            const starsAwarded = incorrectCount === 0 ? 25 : (incorrectCount <= 2 ? 15 : 10);
+
+            const ach = window.achievementsData;
+            ach.userStats.stars += starsAwarded;
+            ach.userStats.totalScore += scoreAwarded;
+            ach.userStats.completedGames += 1;
+
+            const task1 = ach.dailyTasks.find(t => t.id === 1);
+            if (task1 && !task1.completed) {
+                task1.completed = true;
+                ach.userStats.stars += task1.reward;
+            }
+
+            const done = ach.dailyTasks.filter(t => t.completed).length;
+            ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:16px 8px;">
+                        <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🔢🏆</div>
+                        <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Sayı Sihirbazı!</div>
+                        <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                            Sayıları <strong>${timeElapsed} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile sıraladın!
+                        </p>
+                        
+                        <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                            </div>
+                            <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                            ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                            <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                        </div>
+                    </div>
+                `;
+
+                container.querySelector("#btn-replay").addEventListener("click", () => {
+                    playSound('click');
+                    startNumberChaseGame(container, levelNumber);
+                });
+                if (levelNumber < 5) {
+                    container.querySelector("#btn-next-level").addEventListener("click", () => {
+                        playSound('click');
+                        startNumberChaseGame(container, levelNumber + 1);
+                    });
+                }
+                container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                    renderAchievements();
+                });
+            }, 600);
+        }
+    }
+
+    // ============================================================
+    // RİTMİK HAFIZA (HAFIZA/DİKKAT) OYUN MOTORU
+    // ============================================================
+    function startRhythmicMemoryGame(container, levelNumber) {
+        if (activeGameTimer) {
+            clearInterval(activeGameTimer);
+        }
+
+        const LEVELS = [
+            { level: 1, name: "Basit Ritimler", targetLength: 4, speed: 700, color: "#CAFFBF" },
+            { level: 2, name: "Melodik Kulak", targetLength: 5, speed: 600, color: "#A0C4FF" },
+            { level: 3, name: "Ritim Takibi", targetLength: 6, speed: 500, color: "#FFD6A5" },
+            { level: 4, name: "Konsantrasyon", targetLength: 7, speed: 400, color: "#D8BBFF" },
+            { level: 5, name: "Ritim Üstadı", targetLength: 8, speed: 300, color: "#FFC6FF" }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        const colors = [
+            { id: 0, color: "red", hex: "#f87171", lightHex: "#fca5a5" },
+            { id: 1, color: "blue", hex: "#60a5fa", lightHex: "#93c5fd" },
+            { id: 2, color: "green", hex: "#4ade80", lightHex: "#86efac" },
+            { id: 3, color: "yellow", hex: "#facc15", lightHex: "#fde047" }
+        ];
+
+        let sequence = [];
+        let playerIndex = 0;
+        let gameActive = false;
+        let isShowingSequence = false;
+        let roundsWon = 0;
+        let lives = 3;
+
+        container.innerHTML = `
+            <div class="rhythmic-memory-game" style="text-align:center; padding:10px 0; user-select:none;">
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div class="game-lives" style="display:flex; gap:4px;">
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                        <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
+                    </div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.95rem;">
+                        Uzunluk: <span id="rhythm-progress" style="color:#D97706;">0</span>/${cfg.targetLength}
+                    </div>
+                </div>
+
+                <div id="rhythm-prompt" style="margin-bottom:20px; font-weight:800; font-size:1.1rem; color:var(--text-main); min-height:24px;">
+                    Hazırlan... 🥁
+                </div>
+
+                <div class="simon-board" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:260px; margin:0 auto 10px;">
+                    ${colors.map(c => `
+                        <button class="simon-pad" data-id="${c.id}" style="aspect-ratio:1; background:${c.hex}; border:4px solid rgba(0,0,0,0.1); border-radius:24px; cursor:pointer; transition:all 0.1s ease; box-shadow:var(--shadow-medium);"></button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        lucide.createIcons();
+
+        const pads = container.querySelectorAll(".simon-pad");
+        const promptEl = container.querySelector("#rhythm-prompt");
+        const progressEl = container.querySelector("#rhythm-progress");
+        const hearts = container.querySelectorAll(".heart-icon");
+
+        function updateLivesUI() {
+            hearts.forEach((heart, idx) => {
+                if (idx < lives) {
+                    heart.style.fill = "#ef4444";
+                    heart.style.color = "#ef4444";
+                } else {
+                    heart.style.fill = "none";
+                    heart.style.color = "var(--text-muted)";
+                }
+            });
+        }
+
+        pads.forEach(pad => {
+            pad.addEventListener("click", () => {
+                if (!gameActive || isShowingSequence) return;
+                const id = parseInt(pad.getAttribute("data-id"));
+                handlePadClick(id, pad);
+            });
+        });
+
+        function handlePadClick(id, pad) {
+            flashPad(pad, id);
+            
+            if (id === sequence[playerIndex]) {
+                playerIndex++;
+                if (playerIndex === sequence.length) {
+                    isShowingSequence = true;
+                    roundsWon = sequence.length;
+                    progressEl.innerText = roundsWon;
+                    
+                    if (sequence.length >= cfg.targetLength) {
+                        endGame(true);
+                    } else {
+                        promptEl.innerText = "Tebrikler! Devam edelim... 🌟";
+                        setTimeout(() => {
+                            addNewStep();
+                            showSequence();
+                        }, 1000);
+                    }
+                }
+            } else {
+                lives--;
+                updateLivesUI();
+                playSound('locked');
+                promptEl.innerText = "Yanlış Tuş! Tekrar gösteriliyor... 🤫";
+                
+                if (lives <= 0) {
+                    endGame(false);
+                } else {
+                    isShowingSequence = true;
+                    setTimeout(() => {
+                        showSequence();
+                    }, 1200);
+                }
+            }
+        }
+
+        function flashPad(pad, id) {
+            const originalColor = colors[id].hex;
+            const lightColor = colors[id].lightHex;
+            
+            pad.style.background = lightColor;
+            pad.style.transform = "scale(0.95)";
+            playSound('click');
+            
+            setTimeout(() => {
+                pad.style.background = originalColor;
+                pad.style.transform = "scale(1)";
+            }, 250);
+        }
+
+        function addNewStep() {
+            sequence.push(Math.floor(Math.random() * 4));
+        }
+
+        function showSequence() {
+            isShowingSequence = true;
+            promptEl.innerText = "RİTMİ İZLE VE DİNLE... 👀";
+            playerIndex = 0;
+            
+            let idx = 0;
+            const interval = setInterval(() => {
+                if (idx < sequence.length) {
+                    const padId = sequence[idx];
+                    const pad = container.querySelector(`.simon-pad[data-id="${padId}"]`);
+                    flashPad(pad, padId);
+                    idx++;
+                } else {
+                    clearInterval(interval);
+                    isShowingSequence = false;
+                    promptEl.innerText = "ŞİMDİ SEN DENE! 🫵";
+                }
+            }, cfg.speed + 200);
+        }
+
+        function endGame(isWin) {
+            gameActive = false;
+            
+            if (isWin) {
+                playSound('success');
+                const scoreAwarded = cfg.level * 100 + (lives * 40);
+                const starsAwarded = lives === 3 ? 25 : (lives === 2 ? 15 : 10);
+
+                const ach = window.achievementsData;
+                ach.userStats.stars += starsAwarded;
+                ach.userStats.totalScore += scoreAwarded;
+                ach.userStats.completedGames += 1;
+
+                const task1 = ach.dailyTasks.find(t => t.id === 1);
+                if (task1 && !task1.completed) {
+                    task1.completed = true;
+                    ach.userStats.stars += task1.reward;
+                }
+
+                const done = ach.dailyTasks.filter(t => t.completed).length;
+                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🧠🥁🏆</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Ritim Ustası!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Örüntüyü başarıyla tamamladın ve <strong>${lives} canını</strong> korudun!
+                            </p>
+                            
+                            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                                </div>
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
+                                ${levelNumber < 5 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay").addEventListener("click", () => {
+                        playSound('click');
+                        startRhythmicMemoryGame(container, levelNumber);
+                    });
+                    if (levelNumber < 5) {
+                        container.querySelector("#btn-next-level").addEventListener("click", () => {
+                            playSound('click');
+                            startRhythmicMemoryGame(container, levelNumber + 1);
+                        });
+                    }
+                    container.querySelector("#btn-finish-win").addEventListener("click", () => {
+                        playSound('click');
+                        closeModal();
+                        renderAchievements();
+                    });
+                }, 600);
+
+            } else {
+                playSound('locked');
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢🎹</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Oyun Bitti!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Ritim sırasını tamamlayamadın. 3 canının hepsi tükendi.
+                            </p>
+                            
+                            <div style="display:flex; gap:10px; justify-content:center;">
+                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
+                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay-fail").addEventListener("click", () => {
+                        playSound('click');
+                        startRhythmicMemoryGame(container, levelNumber);
+                    });
+                    container.querySelector("#btn-close-fail").addEventListener("click", () => {
+                        playSound('click');
+                        closeModal();
+                    });
+                }, 600);
+            }
+        }
+
+        let countdown = 3;
+        promptEl.innerText = `Hazırlan: ${countdown}`;
+        const countInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                promptEl.innerText = `Hazırlan: ${countdown}`;
+                playSound('click');
+            } else {
+                clearInterval(countInterval);
+                gameActive = true;
+                addNewStep();
+                showSequence();
+            }
+        }, 1000);
+
+        activeGameTimer = setInterval(() => {
+            if (!gameActive) {
+                clearInterval(activeGameTimer);
+                clearInterval(countInterval);
+            }
+        }, 100);
+    }
 
     // 14. Genel Modal Penceresi Kontrolü (Modal Utility Functions)
     function showModal(title, bodyHTML) {
