@@ -1607,6 +1607,13 @@
     margin-right: auto;
 }
 
+.memory-grid.cols-6 {
+    grid-template-columns: repeat(6, 1fr);
+    max-width: min(520px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* ── KART ──────────────────────────────────────────────────────── */
 .memory-card {
     aspect-ratio: 1;
@@ -1702,6 +1709,12 @@
     font-size: clamp(0.85rem, 4.5vw, 1.5rem);
 }
 
+/* cols-6 → çok küçük kart */
+.memory-grid.cols-6 .memory-card-front,
+.memory-grid.cols-6 .memory-card-back {
+    font-size: clamp(0.7rem, 3.8vw, 1.2rem);
+}
+
 /* ── KAZANMA EKRANI BUTONLARI (mobil) ─────────────────────────── */
 .btn-replay,
 .btn-next-level,
@@ -1737,6 +1750,11 @@
     .memory-grid.cols-5 .memory-card-back {
         font-size: 0.75rem;
     }
+
+    .memory-grid.cols-6 .memory-card-front,
+    .memory-grid.cols-6 .memory-card-back {
+        font-size: 0.65rem;
+    }
 }
 
 /* ── TABLET & ORTA EKRAN (481px – 768px) ──────────────────────── */
@@ -1760,6 +1778,11 @@
     .memory-grid.cols-5 .memory-card-back {
         font-size: 1.3rem;
     }
+
+    .memory-grid.cols-6 .memory-card-front,
+    .memory-grid.cols-6 .memory-card-back {
+        font-size: 1.1rem;
+    }
 }
 
 /* ── BÜYÜK EKRAN (≥ 1024px) ────────────────────────────────────── */
@@ -1781,6 +1804,11 @@
     .memory-grid.cols-5 .memory-card-front,
     .memory-grid.cols-5 .memory-card-back {
         font-size: 1.6rem;
+    }
+
+    .memory-grid.cols-6 .memory-card-front,
+    .memory-grid.cols-6 .memory-card-back {
+        font-size: 1.3rem;
     }
 }
 
