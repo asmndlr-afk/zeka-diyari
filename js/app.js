@@ -742,6 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -985,6 +986,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const cfg = LEVELS[levelNumber - 1];
 
+        // Şaşırmaç: Balon çıkış hızını (spawn) artırmak için aralığı daraltıyoruz
+        cfg.spawnInterval = Math.floor(cfg.spawnInterval * 0.65);
+        
+        // Her seviyede farklı/rastgele renk hedefi
+        const randomTarget = cfg.balloonColors[Math.floor(Math.random() * cfg.balloonColors.length)];
+        cfg.targetColor = randomTarget.name;
+        cfg.targetColorHex = randomTarget.hex;
+
         let poppedCount = 0;
         let lastColorName = "";
         let consecutiveColorCount = 0;
@@ -1032,6 +1041,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -1105,23 +1115,51 @@ document.addEventListener("DOMContentLoaded", () => {
             balloon.style.setProperty("--duration", `${floatDuration}s`);
             balloon.style.left = `${Math.random() * 80 + 10}%`;
             
+            // Şaşırmaç: %30 ihtimalle zigzag hareketi yapan balon
+            const isTricky = Math.random() < 0.30;
+            const svgClass = isTricky ? "balloon-svg-element zigzag-animation" : "balloon-svg-element";
+
             balloon.innerHTML = `
-                <svg class="balloon-svg-element" viewBox="0 0 50 70" style="width:100%; height:100%; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.15)); transition: transform 0.1s ease;">
-                    <path d="M25,0 C11,0 0,11 0,25 C0,39 15,50 25,55 C35,50 50,39 50,25 C50,11 39,0 25,0 Z" fill="${selectedColor.hex}" />
+                <svg class="${svgClass}" viewBox="0 0 50 70" style="width:100%; height:100%; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.15)); transition: transform 0.1s ease, fill 0.3s ease;">
+                    <path class="balloon-body-path" d="M25,0 C11,0 0,11 0,25 C0,39 15,50 25,55 C35,50 50,39 50,25 C50,11 39,0 25,0 Z" fill="${selectedColor.hex}" />
                     <ellipse cx="15" cy="15" rx="4" ry="7" fill="#FFFFFF" opacity="0.4" transform="rotate(-30 15 15)" />
-                    <path d="M25,55 L22,60 L28,60 Z" fill="${selectedColor.hex}" />
+                    <path class="balloon-knot-path" d="M25,55 L22,60 L28,60 Z" fill="${selectedColor.hex}" />
                     <path d="M25,60 C25,64 22,67 25,72" fill="none" stroke="#CBD5E1" stroke-width="2" />
                 </svg>
             `;
 
+            // Şaşırmaç: %25 ihtimalle havada rengi değişen balon!
+            let currentColorName = selectedColor.name;
+            if (Math.random() < 0.25) {
+                const swapTime = Math.random() * (floatDuration * 1000 * 0.4) + (floatDuration * 1000 * 0.2);
+                setTimeout(() => {
+                    if (balloonElements.includes(balloon)) {
+                        const otherColors = cfg.balloonColors.filter(c => c.name !== currentColorName);
+                        if (otherColors.length > 0) {
+                            const newColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+                            currentColorName = newColor.name;
+                            balloon.dataset.color = newColor.name;
+                            const body = balloon.querySelector('.balloon-body-path');
+                            const knot = balloon.querySelector('.balloon-knot-path');
+                            if (body && knot) {
+                                body.style.transition = "fill 0.4s";
+                                knot.style.transition = "fill 0.4s";
+                                body.setAttribute('fill', newColor.hex);
+                                knot.setAttribute('fill', newColor.hex);
+                            }
+                        }
+                    }
+                }, swapTime);
+            }
+
             balloon.addEventListener("mousedown", (e) => {
                 e.stopPropagation();
-                popBalloon(balloon, selectedColor.name);
+                popBalloon(balloon, currentColorName);
             });
             balloon.addEventListener("touchstart", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                popBalloon(balloon, selectedColor.name);
+                popBalloon(balloon, currentColorName);
             }, { passive: false });
 
             playfield.appendChild(balloon);
@@ -1384,6 +1422,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -1894,6 +1933,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -2181,16 +2221,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const LEVELS = [
-            { level: 1, name: "Başlangıç", emoji: "⭐", targetScore: 10, speed: 1300, scoreBase: 50, color: "#CAFFBF", animals: ["🐼", "🐨", "🐸"] },
-            { level: 2, name: "Minik Adımlar", emoji: "🌱", targetScore: 11, speed: 1200, scoreBase: 70, color: "#CAFFBF", animals: ["🐼", "🐨", "🐸", "🐱"] },
-            { level: 3, name: "Kolay", emoji: "🌟", targetScore: 12, speed: 1100, scoreBase: 100, color: "#A0C4FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶"] },
-            { level: 4, name: "Dikkatli Parmaklar", emoji: "⚡", targetScore: 13, speed: 1000, scoreBase: 120, color: "#A0C4FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶"] },
-            { level: 5, name: "Orta", emoji: "🏆", targetScore: 15, speed: 900, scoreBase: 150, color: "#FFD6A5", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁"] },
-            { level: 6, name: "Refleks Okulu", emoji: "🎒", targetScore: 16, speed: 850, scoreBase: 180, color: "#FFD6A5", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁"] },
-            { level: 7, name: "Zor", emoji: "🔥", targetScore: 18, speed: 750, scoreBase: 200, color: "#D8BBFF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵"] },
-            { level: 8, name: "Şimşek Hızı", emoji: "⚡", targetScore: 19, speed: 700, scoreBase: 250, color: "#D8BBFF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵"] },
-            { level: 9, name: "Şampiyon", emoji: "👑", targetScore: 20, speed: 600, scoreBase: 300, color: "#FFC6FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵", "🐙", "🦄"] },
-            { level: 10, name: "Efsanevi Tıklayıcı", emoji: "🔮", targetScore: 25, speed: 500, scoreBase: 500, color: "#FFC6FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵", "🐙", "🦄","🦋","🦀"] }
+            { level: 1, name: "Başlangıç", emoji: "⭐", targetScore: 10, speed: 1800, scoreBase: 50, color: "#CAFFBF", animals: ["🐼", "🐨", "🐸"] },
+            { level: 2, name: "Minik Adımlar", emoji: "🌱", targetScore: 11, speed: 1700, scoreBase: 70, color: "#CAFFBF", animals: ["🐼", "🐨", "🐸", "🐱"] },
+            { level: 3, name: "Kolay", emoji: "🌟", targetScore: 12, speed: 1600, scoreBase: 100, color: "#A0C4FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶"] },
+            { level: 4, name: "Dikkatli Parmaklar", emoji: "⚡", targetScore: 13, speed: 1500, scoreBase: 120, color: "#A0C4FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶"] },
+            { level: 5, name: "Orta", emoji: "🏆", targetScore: 15, speed: 1400, scoreBase: 150, color: "#FFD6A5", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁"] },
+            { level: 6, name: "Refleks Okulu", emoji: "🎒", targetScore: 16, speed: 1350, scoreBase: 180, color: "#FFD6A5", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁"] },
+            { level: 7, name: "Zor", emoji: "🔥", targetScore: 18, speed: 1250, scoreBase: 200, color: "#D8BBFF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵"] },
+            { level: 8, name: "Şimşek Hızı", emoji: "⚡", targetScore: 19, speed: 1200, scoreBase: 250, color: "#D8BBFF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵"] },
+            { level: 9, name: "Şampiyon", emoji: "👑", targetScore: 20, speed: 1100, scoreBase: 300, color: "#FFC6FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵", "🐙", "🦄"] },
+            { level: 10, name: "Efsanevi Tıklayıcı", emoji: "🔮", targetScore: 25, speed: 1000, scoreBase: 500, color: "#FFC6FF", animals: ["🐼", "🐨", "🐸", "🐱", "🐶", "🦊", "🦁", "🐰", "🐵", "🐙", "🦄","🦋","🦀"] }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
@@ -2199,6 +2239,17 @@ document.addEventListener("DOMContentLoaded", () => {
         let gameActive = true;
         let lastHole = -1;
         let popTimeout = null;
+        
+        // Hayvan isimleri eşleştirmesi
+        const animalNames = {
+            "🐼": "Panda", "🐨": "Koala", "🐸": "Kurbağa", "🐱": "Kedi", "🐶": "Köpek",
+            "🦊": "Tilki", "🦁": "Aslan", "🐰": "Tavşan", "🐵": "Maymun", "🐙": "Ahtapot",
+            "🦄": "Tekboynuz", "🦋": "Kelebek", "🦀": "Yengeç"
+        };
+        
+        // Oyun için tek bir hedef hayvan belirliyoruz
+        const targetAnimal = cfg.animals[Math.floor(Math.random() * cfg.animals.length)];
+        let currentPoppedAnimal = "";
 
         const tabsHTML = LEVELS.map(l => {
             const isUnlocked = isLevelUnlocked(5, l.level);
@@ -2222,8 +2273,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
 
-                <div id="instruction-bar" style="margin-bottom:15px; font-weight:700; font-size:0.95rem; color:var(--text-main); min-height:24px;">
-                    Parlayan sevimli hayvanı yakala! ⚡
+                <div id="instruction-bar" style="margin-bottom:15px; font-weight:700; font-size:1.1rem; color:var(--text-main); min-height:24px;">
+                    Sadece <strong style="color:#D97706; font-size:1.25rem; text-transform:uppercase;">${animalNames[targetAnimal]}</strong> yakala! ⚡
                 </div>
 
                 <div class="mole-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:280px; margin:0 auto 15px;">
@@ -2245,6 +2296,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -2294,7 +2346,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 h.style.borderColor = "var(--text-muted)";
             });
 
-            if (!tappedThisTurn && currentlyActiveHole !== -1) {
+            // Yalnızca çıkan hayvan hedefse ve ona TIKLANMADIYSA can düşeriz.
+            if (!tappedThisTurn && currentlyActiveHole !== -1 && currentPoppedAnimal === targetAnimal) {
                 lives--;
                 updateLivesUI();
                 playSound('locked');
@@ -2309,11 +2362,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const hole = randomHole();
             currentlyActiveHole = parseInt(hole.dataset.id);
 
+            // %50 ihtimalle hedef hayvanı, %50 ihtimalle rastgele şaşırtmaca hayvanı çıkart.
+            if (Math.random() < 0.5) {
+                currentPoppedAnimal = targetAnimal;
+            } else {
+                let distractor = cfg.animals[Math.floor(Math.random() * cfg.animals.length)];
+                // Rastgele seçilen şaşırtmacanın aynısı gelirse de sıkıntı yok ama farklı olsa daha iyi olur
+                currentPoppedAnimal = distractor;
+            }
+
             const animalEl = hole.querySelector(".mole-animal");
-            const animalEmoji = cfg.animals[Math.floor(Math.random() * cfg.animals.length)];
             
             if (animalEl) {
-                animalEl.innerText = animalEmoji;
+                animalEl.innerText = currentPoppedAnimal;
                 animalEl.style.opacity = "1";
                 animalEl.style.transform = "translateY(-10px) scale(1)";
             }
@@ -2330,36 +2391,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 const holeId = parseInt(hole.dataset.id);
 
                 if (holeId === currentlyActiveHole && !tappedThisTurn) {
-                    playSound('success');
-                    score++;
-                    if (scoreCounter) scoreCounter.innerText = score;
-                    tappedThisTurn = true;
-                    showFloatingText(hole, "+1", "var(--color-primary)");
+                    if (currentPoppedAnimal === targetAnimal) {
+                        playSound('success');
+                        score++;
+                        if (scoreCounter) scoreCounter.innerText = score;
+                        tappedThisTurn = true;
+                        showFloatingText(hole, "+1", "var(--color-primary)");
 
-                    hole.style.background = "rgba(160, 196, 255, 0.4)";
-                    const animalEl = hole.querySelector(".mole-animal");
-                    if (animalEl) {
-                        animalEl.style.transform = "translateY(-15px) scale(1.2)";
-                        setTimeout(() => {
-                            animalEl.style.opacity = "0";
-                            animalEl.style.transform = "translateY(20px) scale(0.5)";
-                        }, 150);
-                    }
+                        hole.style.background = "rgba(160, 196, 255, 0.4)";
+                        const animalEl = hole.querySelector(".mole-animal");
+                        if (animalEl) {
+                            animalEl.style.transform = "translateY(-15px) scale(1.2)";
+                            setTimeout(() => {
+                                animalEl.style.opacity = "0";
+                                animalEl.style.transform = "translateY(20px) scale(0.5)";
+                            }, 150);
+                        }
 
-                    if (score >= cfg.targetScore) {
-                        endGame(true);
-                    }
-                } else if (holeId !== currentlyActiveHole) {
-                    lives--;
-                    updateLivesUI();
-                    playSound('locked');
-                    showFloatingText(hole, "❌", "#ef4444");
-                    
-                    hole.style.animation = "shake 0.3s ease";
-                    setTimeout(() => { hole.style.animation = ""; }, 300);
+                        if (score >= cfg.targetScore) {
+                            endGame(true);
+                        }
+                    } else {
+                        // Yanlış hedefe tıklandı
+                        lives--;
+                        updateLivesUI();
+                        playSound('locked');
+                        tappedThisTurn = true;
+                        showFloatingText(hole, "❌", "#ef4444");
+                        
+                        hole.style.animation = "shake 0.3s ease";
+                        setTimeout(() => { hole.style.animation = ""; }, 300);
 
-                    if (lives <= 0) {
-                        endGame(false);
+                        if (lives <= 0) {
+                            endGame(false);
+                        }
                     }
                 }
             });
@@ -2639,6 +2704,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -2909,6 +2975,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -3574,6 +3641,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
@@ -3838,6 +3906,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
