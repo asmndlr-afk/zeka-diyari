@@ -21,7 +21,7 @@ const gameTitles = [
     "Gölge Eşleme", "Sıra Takibi Ustası", "Labirent Ustası", "Hafıza Sayıları", "Renk Eşleştirme",
     "Hızlı Refleks Çemberi", "Sayı Avı", "Kelime Sandığı", "Kelime Bulucu", "Yapboz Dünyası",
     "Yön Bulmaca", "Sayı Piramidi", "Harf Sıralama Oyunu", "Şekil Sayma Şenliği", "Gözlem Yeteneği"
-];
+    ];
 
 const skillsPool = {
     "Hafıza Oyunları": ["Görsel Hafıza", "Kısa Süreli Bellek", "Sıralı Hatırlama", "Uzamsal Hafıza"],
@@ -205,12 +205,124 @@ gamesList.push({
     locked: false
 });
 
-// 11 - 100. Oyunlar (Çok Yakında / Kilitli)
+// 11. Oyun: Gizli Obje Avı
+gamesList.push({
+    id: 11,
+    name: "Gizli Obje Avı",
+    category: "Görsel Algı",
+    categoryClass: "gorsel",
+    color: "#CAFFBF",
+    icon: "eye",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Seçici Dikkat", "Görsel Tarama", "Odaklanma"],
+    desc: "Karmaşık şekiller arasından istenen gizli objeleri bul ve süren dolmadan tüm hedefleri topla!",
+    image: "assets/images/gizli_obje.jpg",
+    locked: false
+});
+
+// 12. Oyun: Mantık Köprüsü
+gamesList.push({
+    id: 12,
+    name: "Mantık Köprüsü",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#D8BBFF",
+    icon: "puzzle",
+    age: "7-12 yaş",
+    difficulty: "Orta",
+    skills: ["Akıl Yürütme", "Örüntü Tanıma", "Problem Çözme"],
+    desc: "Örüntüleri çözerek köprüyü tamamla ve sevimli tavşanı karşıya geçir!",
+    image: "assets/images/mantik_koprusu.jpg",
+    locked: false
+});
+
+// 13. Oyun: Sayı Yapbozu
+gamesList.push({
+    id: 13,
+    name: "Sayı Yapbozu",
+    category: "Matematik Oyunları",
+    categoryClass: "matematik",
+    color: "#FDFFB6",
+    icon: "calculator",
+    age: "7-12 yaş",
+    difficulty: "Orta",
+    skills: ["Sayı Sıralama", "Mantık", "Problem Çözme"],
+    desc: "Karışık halde verilen sayı bloklarını doğru sıraya dizerek yapbozu tamamla!",
+    image: "assets/images/sayi_yapbozu.jpg",
+    locked: false
+});
+
+// 14. Oyun: Sevimli Boyama Kitabı
+gamesList.push({
+    id: 14,
+    name: "Sevimli Boyama Kitabı",
+    category: "Görsel Algı",
+    categoryClass: "gorsel",
+    color: "#CAFFBF",
+    icon: "eye",
+    age: "4-10 yaş",
+    difficulty: "Kolay",
+    skills: ["Yaratıcılık", "Renk Algısı", "İnce Motor Becerileri"],
+    desc: "Renksiz sevimli çizimleri kendi zevkine göre boya ve harika eserler ortaya çıkar!",
+    image: "assets/images/boyama_kitabi.jpg",
+    locked: false
+});
+
+// 15. Oyun: Yapboz Kulesi
+gamesList.push({
+    id: 15,
+    name: "Yapboz Kulesi",
+    category: "Refleks Oyunları",
+    categoryClass: "refleks",
+    color: "#FFC6FF",
+    icon: "zap",
+    age: "6-12 yaş",
+    difficulty: "Zor",
+    skills: ["Zamanlama", "Odaklanma", "El-Göz Koordinasyonu"],
+    desc: "Hareket eden blokları tam üst üste düşürerek dünyanın en yüksek kulesini inşa et!",
+    image: "assets/images/yapboz_kulesi.jpg",
+    locked: false
+});
+
+// 16. Oyun: Noktaları Birleştir
+gamesList.push({
+    id: 16,
+    name: "Noktaları Birleştir",
+    category: "Dikkat Oyunları",
+    categoryClass: "dikkat",
+    color: "#FFD6A5",
+    icon: "search",
+    age: "5-10 yaş",
+    difficulty: "Kolay",
+    skills: ["Sayı Takibi", "Görsel Bütünleme", "Odaklanma"],
+    desc: "Numaralı noktaları sırayla birleştirerek gizli ve sevimli resmi ortaya çıkar!",
+    image: "assets/images/noktalari_birlestir.jpg",
+    locked: false
+});
+
+// 17. Oyun: Büyülü Taşlar
+gamesList.push({
+    id: 17,
+    name: "Büyülü Taşlar",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#D8BBFF",
+    icon: "puzzle",
+    age: "7-12 yaş",
+    difficulty: "Orta",
+    skills: ["Problem Çözme", "Strateji", "Görsel Algı"],
+    desc: "Antik sütunlardaki fantastik büyü taşlarını aynı renklere göre doğru şekilde sırala!",
+    image: "assets/images/buyulu_taslar_cover.jpg",
+    locked: false
+});
+
+// 18 - 100. Oyunlar (Çok Yakında / Kilitli)
 const categoriesKeys = Object.keys(categoriesConfig);
 const ages = ["6-8 yaş", "8-10 yaş", "10-12 yaş", "6-12 yaş"];
 const difficulties = ["Kolay", "Orta", "Zor"];
 
-for (let i = 11; i <= 100; i++) {
+for (let i = 18; i <= 100; i++) {
     const category = categoriesKeys[i % categoriesKeys.length];
     const categoryInfo = categoriesConfig[category];
     const titleBase = gameTitles[(i - 5) % gameTitles.length];

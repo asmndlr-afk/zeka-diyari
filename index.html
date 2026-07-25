@@ -8,6 +8,18 @@
     <meta name="author" content="Zeka Diyarı Geliştirici Ekibi">
     
     <!-- CSS Stil Dosyaları -->
+    <script>
+        // Zorla Cache Temizleme (PWA güncelleme sorunu için)
+        if (localStorage.getItem('cache_cleared_v4') !== 'true') {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    for (let name of names) caches.delete(name);
+                });
+            }
+            localStorage.setItem('cache_cleared_v4', 'true');
+            window.location.reload(true);
+        }
+    </script>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/animations.css">
@@ -426,7 +438,8 @@
     <!-- Platform Veri ve Kontrol Dosyaları -->
     <script src="js/gamesData.js"></script>
     <script src="js/achievements.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/newGames.js?v=1784977481192"></script>
+    <script src="js/app.js?v=4"></script>
     <script src="js/pwa.js"></script>
 </body>
 </html>

@@ -3,7 +3,12 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Profil Avatarını Yükleme (Restore Avatar)
     const savedAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
-    document.querySelectorAll('.nav-avatar-btn img').forEach(img => img.src = savedAvatar);
+    window.updateAvatarUI = function(val) {
+        document.querySelectorAll('.nav-avatar-btn').forEach(btn => {
+            btn.innerHTML = `<img src="${val}" alt="Profil">`;
+        });
+    };
+    window.updateAvatarUI(savedAvatar);
 
     // 1. Durum Yönetimi (State Management)
     let isSoundEnabled = true;
@@ -30,15 +35,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function isLevelUnlocked(gameId, level) {
         if (level === 1) return true;
-        const maxUnlocked = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_max_unlocked`) || "1");
+        const maxUnlocked = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_unlocked_v3`) || "1");
         return level <= maxUnlocked;
     }
 
     function unlockNextLevel(gameId, currentLevel) {
         const nextLevel = currentLevel + 1;
-        const currentMax = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_max_unlocked`) || "1");
+        const currentMax = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_unlocked_v3`) || "1");
         if (nextLevel > currentMax) {
-            localStorage.setItem(`zeka_diyari_game_${gameId}_max_unlocked`, nextLevel);
+            localStorage.setItem(`zeka_diyari_game_${gameId}_unlocked_v3`, nextLevel);
         }
     }
 
@@ -224,15 +229,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openAvatarSelectionModal() {
         const avatars = [
-            { name: "Panda (Varsayılan)", path: "assets/images/kids_avatar.jpg" },
-            { name: "Sevimli Panda", path: "assets/images/avatars/panda.png" },
-            { name: "Sevimli Kedi", path: "assets/images/avatars/cat.png" },
-            { name: "Sevimli Köpek", path: "assets/images/avatars/dog.png" },
-            { name: "Sevimli Tavşan", path: "assets/images/avatars/rabbit.png" }
+            { name: "Varsayılan", path: "assets/images/kids_avatar.jpg" },
+            { name: "Panda", path: "assets/images/avatars/panda.png" },
+            { name: "Kedi", path: "assets/images/avatars/cat.png" },
+            { name: "Köpek", path: "assets/images/avatars/dog.png" },
+            { name: "Tavşan", path: "assets/images/avatars/rabbit.png" },
+            { name: "Tilki", path: "assets/images/avatars/fox.png" },
+            { name: "Ayı", path: "assets/images/avatars/bear.png" },
+            { name: "Koala", path: "assets/images/avatars/koala.png" },
+            { name: "Kaplan", path: "assets/images/avatars/tiger.png" },
+            { name: "Aslan", path: "assets/images/avatars/lion.png" },
+            { name: "İnek", path: "assets/images/avatars/cow.png" },
+            { name: "Kurbağa", path: "assets/images/avatars/frog.png" },
+            { name: "Maymun", path: "assets/images/avatars/monkey.png" },
+            { name: "Penguen", path: "assets/images/avatars/penguin.png" },
+            { name: "Kelebek", path: "assets/images/avatars/butterfly.jpg" },
+            { name: "Zürafa", path: "assets/images/avatars/giraffe.jpg" }
         ];
         
         let avatarsHTML = `
-            <div class="avatar-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; padding: 15px 0;">
+            <div class="avatar-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; padding: 15px 0; max-height:400px; overflow-y:auto;">
         `;
         
         const currentAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
@@ -240,8 +256,8 @@ document.addEventListener("DOMContentLoaded", () => {
         avatars.forEach(av => {
             const isSelected = av.path === currentAvatar;
             avatarsHTML += `
-                <div class="avatar-option-card" data-path="${av.path}" style="border: 3px solid ${isSelected ? 'var(--pastel-purple)' : 'transparent'}; background: var(--bg-card); border-radius: 20px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-small);">
-                    <img src="${av.path}" alt="${av.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--text-muted); margin-bottom: 8px;">
+                <div class="avatar-option-card" data-val="${av.path}" style="border: 3px solid ${isSelected ? 'var(--pastel-purple)' : 'transparent'}; background: var(--bg-card); border-radius: 20px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-small);">
+                    <img src="${av.path}" alt="${av.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--text-muted); margin-bottom: 8px; background:var(--pastel-blue);">
                     <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${av.name}</div>
                 </div>
             `;
@@ -255,14 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const options = document.querySelectorAll(".avatar-option-card");
         options.forEach(opt => {
             opt.addEventListener("click", () => {
-                const selectedPath = opt.getAttribute("data-path");
-                localStorage.setItem('selectedAvatar', selectedPath);
-                document.querySelectorAll('.nav-avatar-btn img').forEach(img => img.src = selectedPath);
+                const selectedVal = opt.getAttribute("data-val");
+                localStorage.setItem('selectedAvatar', selectedVal);
+                if(window.updateAvatarUI) window.updateAvatarUI(selectedVal);
                 playSound('success');
                 closeModal();
             });
             opt.addEventListener("mouseenter", () => {
-                opt.style.transform = "scale(1.05)";
+                opt.style.transform = "scale(1.1)";
             });
             opt.addEventListener("mouseleave", () => {
                 opt.style.transform = "scale(1)";
@@ -649,6 +665,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 startNumberChaseGame(modalBodyElement, 1);
             } else if (game.id === 10) {
                 startRhythmicMemoryGame(modalBodyElement, 1);
+            } else if (game.id === 11) {
+                startHiddenObjectGame(modalBodyElement, 1);
+            } else if (game.id === 12) {
+                startLogicBridgeGame(modalBodyElement, 1);
+            } else if (game.id === 13) {
+                startNumberPuzzleGame(modalBodyElement, 1);
+            } else if (game.id === 14) {
+                startColoringBookGame(modalBodyElement, 1);
+            } else if (game.id === 15) {
+                startTowerStackerGame(modalBodyElement, 1);
+            } else if (game.id === 16) {
+                startConnectDotsGame(modalBodyElement, 1);
+            } else if (game.id === 17) {
+                if (window.startColorSortGame) window.startColorSortGame(modalBodyElement, 1);
             }
         }, 2200);
     }
@@ -2216,6 +2246,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // HIZLI PARMAKLAR (REFLEKS) OYUN MOTORU
     // ============================================================
     function startFastFingersGame(container, levelNumber) {
+        if (window.currentGameCleanup) {
+            window.currentGameCleanup();
+            window.currentGameCleanup = null;
+        }
         if (activeGameTimer) {
             clearInterval(activeGameTimer);
         }
@@ -2273,8 +2307,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
 
-                <div id="instruction-bar" style="margin-bottom:15px; font-weight:700; font-size:1.1rem; color:var(--text-main); min-height:24px;">
-                    Sadece <strong style="color:#D97706; font-size:1.25rem; text-transform:uppercase;">${animalNames[targetAnimal]}</strong> yakala! ⚡
+                <div id="instruction-bar" style="margin-bottom:15px; background:linear-gradient(135deg, #FEF08A, #FDE047); padding:15px; border-radius:12px; border:3px solid #F59E0B; text-align:center; box-shadow: 0 6px 12px -2px rgba(217, 119, 6, 0.4);">
+                    <div style="font-weight:800; font-size:1.2rem; color:#B45309; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">SADECE BU HAYVANI YAKALA!</div>
+                    <div style="font-weight:900; font-size:3.5rem; color:#991B1B; text-transform:uppercase; letter-spacing:2px; line-height:1; display:flex; align-items:center; justify-content:center; gap:15px; text-shadow: 2px 2px 0px #FEF08A, 4px 4px 0px rgba(180, 83, 9, 0.2);">
+                        <span style="font-size:4rem; animation:bounce-loop 1.5s infinite;">${targetAnimal}</span> 
+                        <span>${animalNames[targetAnimal]}</span>
+                    </div>
                 </div>
 
                 <div class="mole-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:280px; margin:0 auto 15px;">
@@ -2305,9 +2343,13 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        let countInterval = null;
         function cleanUp() {
+            gameActive = false;
             if (popTimeout) clearTimeout(popTimeout);
+            if (countInterval) clearInterval(countInterval);
         }
+        window.currentGameCleanup = cleanUp;
 
         function updateLivesUI() {
             hearts.forEach((heart, idx) => {
@@ -2452,6 +2494,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (isWin) {
                 playSound('success');
+                unlockNextLevel(5, levelNumber);
                 
                 const scoreAwarded = cfg.scoreBase + (lives * 30);
                 const starsAwarded = lives === 3 ? 25 : (lives === 2 ? 15 : 10);
@@ -2554,15 +2597,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let countdown = 3;
-        if (instructionBar) instructionBar.innerText = `Oyun başlıyor: ${countdown}`;
+        let instructionTitle = null;
+        if (instructionBar) {
+            instructionTitle = instructionBar.querySelector('div:first-child');
+            if (instructionTitle) instructionTitle.innerText = `Oyun başlıyor: ${countdown}`;
+        }
         
-        const countInterval = setInterval(() => {
+        countInterval = setInterval(() => {
             countdown--;
             if (countdown > 0) {
-                if (instructionBar) instructionBar.innerText = `Oyun başlıyor: ${countdown}`;
+                if (instructionTitle) instructionTitle.innerText = `Oyun başlıyor: ${countdown}`;
             } else {
                 clearInterval(countInterval);
-                if (instructionBar) instructionBar.innerText = "Hadi yakala! ⚡";
+                if (instructionTitle) instructionTitle.innerText = "Hadi yakala! ⚡";
                 popAnimal();
             }
         }, 1000);
@@ -2585,7 +2632,17 @@ document.addEventListener("DOMContentLoaded", () => {
             { level: 7, name: "Karışık Patika", emoji: "🔥", size: 8, density: 0.32, scoreBase: 200, color: "#D8BBFF" },
             { level: 8, name: "Kayıp Şehir", emoji: "🏛️", size: 8, density: 0.33, scoreBase: 250, color: "#D8BBFF" },
             { level: 9, name: "Sihirli Geçit", emoji: "⚡", size: 9, density: 0.34, scoreBase: 300, color: "#FFC6FF" },
-            { level: 10, name: "Labirent Kralı", emoji: "👑", size: 10, density: 0.35, scoreBase: 400, color: "#FFC6FF" }
+            { level: 10, name: "Labirent Kralı", emoji: "👑", size: 10, density: 0.35, scoreBase: 400, color: "#FFC6FF" },
+            { level: 11, name: "Zindan Çıkışı", emoji: "🦇", size: 10, density: 0.36, scoreBase: 450, color: "#FCA311" },
+            { level: 12, name: "Karanlık Orman", emoji: "🐺", size: 11, density: 0.37, scoreBase: 500, color: "#FCA311" },
+            { level: 13, name: "Volkanın Kalbi", emoji: "🌋", size: 11, density: 0.38, scoreBase: 550, color: "#E63946" },
+            { level: 14, name: "Ateş Çemberi", emoji: "☄️", size: 11, density: 0.39, scoreBase: 600, color: "#E63946" },
+            { level: 15, name: "Buzul Mağarası", emoji: "🧊", size: 12, density: 0.40, scoreBase: 650, color: "#A8DADC" },
+            { level: 16, name: "Donmuş Nehir", emoji: "❄️", size: 12, density: 0.40, scoreBase: 700, color: "#A8DADC" },
+            { level: 17, name: "Uzay Yolu", emoji: "🚀", size: 12, density: 0.41, scoreBase: 750, color: "#457B9D" },
+            { level: 18, name: "Galaksi Sınırı", emoji: "🌌", size: 12, density: 0.41, scoreBase: 800, color: "#457B9D" },
+            { level: 19, name: "Zaman Tüneli", emoji: "⏳", size: 13, density: 0.42, scoreBase: 900, color: "#1D3557" },
+            { level: 20, name: "Sonsuz Labirent", emoji: "♾️", size: 13, density: 0.42, scoreBase: 1000, color: "#1D3557" }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
@@ -2861,7 +2918,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                ${levelNumber < 10 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
+                                ${levelNumber < 20 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
@@ -2871,7 +2928,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         playSound('click');
                         startMazeGame(container, levelNumber);
                     });
-                    if (levelNumber < 10) {
+                    if (levelNumber < 20) {
                         container.querySelector("#btn-next-level").addEventListener("click", () => {
                             playSound('click');
                             startMazeGame(container, levelNumber + 1);
@@ -3224,45 +3281,151 @@ document.addEventListener("DOMContentLoaded", () => {
     // DOĞRU MU YANLIŞ MI? (DİKKAT) OYUN MOTORU
     // ============================================================
     function startTrueFalseGame(container, levelNumber) {
+        if (window.currentGameCleanup) {
+            window.currentGameCleanup();
+            window.currentGameCleanup = null;
+        }
         if (activeGameTimer) {
             clearInterval(activeGameTimer);
         }
 
         const LEVELS = [
-            { level: 1, name: "Kolay Sorular", targetScore: 5, speed: 8, color: "#CAFFBF" },
-            { level: 2, name: "Minik Dahiler", targetScore: 6, speed: 7.5, color: "#CAFFBF" },
-            { level: 3, name: "Meraklı Kaşif", targetScore: 7, speed: 7, color: "#A0C4FF" },
-            { level: 4, name: "Bilgi Yolcusu", targetScore: 8, speed: 6.5, color: "#A0C4FF" },
-            { level: 5, name: "Zihin Egzersizi", targetScore: 9, speed: 6, color: "#FFD6A5" },
-            { level: 6, name: "Mantık Avcısı", targetScore: 10, speed: 5.5, color: "#FFD6A5" },
-            { level: 7, name: "Hızlı Düşünür", targetScore: 11, speed: 5, color: "#D8BBFF" },
-            { level: 8, name: "Süper Odak", targetScore: 12, speed: 4.5, color: "#D8BBFF" },
-            { level: 9, name: "Zeka Ustası", targetScore: 13, speed: 4, color: "#FFC6FF" },
-            { level: 10, name: "Bilgi Şampiyonu", targetScore: 15, speed: 3.5, color: "#FFC6FF" }
-        ];
-
-        const questionsPool = [
-            { q: "Muz sarı renklidir. 🍌", a: true },
-            { q: "Kediler havlar. 🐱", a: false },
-            { q: "Elma bir meyvedir. 🍎", a: true },
-            { q: "Balıklar uçabilir. 🐟", a: false },
-            { q: "Güneş yeşil renklidir. ☀️", a: false },
-            { q: "Kurbağalar zıplar. 🐸", a: true },
-            { q: "Araba suyun altında sürülür. 🚗", a: false },
-            { q: "Karpuz yuvarlaktır. 🍉", a: true },
-            { q: "Uçaklar gökyüzünde uçar. ✈️", a: true },
-            { q: "İnekler süt verir. 🐄", a: true },
-            { q: "5 + 3 = 8 eder. 🔢", a: true },
-            { q: "4 - 1 = 2 eder. 🔢", a: false },
-            { q: "Filler uçabilir. 🐘", a: false },
-            { q: "Limon ekşidir. 🍋", a: true },
-            { q: "Kuşların kanatları vardır. 🐦", a: true },
-            { q: "Ateş soğuktur. 🔥", a: false },
-            { q: "Dondurma sıcaktır. 🍦", a: false },
-            { q: "Geceleri gökyüzünde Ay görünür. 🌙", a: true }
+            { 
+                level: 1, name: "Kolay Sorular", targetScore: 5, speed: 15, color: "#CAFFBF",
+                questions: [
+                    { q: "İnekler bize süt verir. 🐄", a: true },
+                    { q: "Güneş geceleri dünyamızı aydınlatır. ☀️", a: false },
+                    { q: "Kuşların kanatları vardır ve uçarlar. 🐦", a: true },
+                    { q: "Kediler 'Miyav' diyerek ses çıkarır. 🐱", a: true },
+                    { q: "Balıklar gökyüzünde uçar. 🐟", a: false },
+                    { q: "Limon tatlı bir meyvedir. 🍋", a: false },
+                    { q: "Muz sarı renkli bir meyvedir. 🍌", a: true },
+                    { q: "Arabaların direksiyonu yoktur. 🚗", a: false }
+                ]
+            },
+            { 
+                level: 2, name: "Minik Dahiler", targetScore: 6, speed: 14, color: "#CAFFBF",
+                questions: [
+                    { q: "Bir yılda 12 ay vardır. 📅", a: true },
+                    { q: "Kış mevsiminde havalar çok sıcaktır. ⛄", a: false },
+                    { q: "Elma ve armut meyvedir. 🍎", a: true },
+                    { q: "Köpekler sadece ot yer. 🐶", a: false },
+                    { q: "İnsanların iki kolu ve iki bacağı vardır. 🏃", a: true },
+                    { q: "Gökkuşağı siyah beyaz renklerden oluşur. 🌈", a: false },
+                    { q: "Ateş sıcaktır ve yakıcıdır. 🔥", a: true },
+                    { q: "Gemiler karada tekerleklerle gider. 🚢", a: false }
+                ]
+            },
+            { 
+                level: 3, name: "Meraklı Kaşif", targetScore: 7, speed: 13, color: "#A0C4FF",
+                questions: [
+                    { q: "Dünyamızın şekli bir küreye (topa) benzer. 🌍", a: true },
+                    { q: "Kurbağalar havlayarak haberleşir. 🐸", a: false },
+                    { q: "Suyu dondurursak buz elde ederiz. 🧊", a: true },
+                    { q: "Kelebekler tırtıllardan dönüşür. 🦋", a: true },
+                    { q: "Arılar yuvalarına petek değil, kutu yaparlar. 🐝", a: false },
+                    { q: "Uçaklar gökyüzünde kuşlardan daha yükseğe uçabilir. ✈️", a: true },
+                    { q: "Bir haftada 10 gün vardır. 📆", a: false },
+                    { q: "Karpuz yaz aylarında yenen sulu bir meyvedir. 🍉", a: true }
+                ]
+            },
+            { 
+                level: 4, name: "Bilgi Yolcusu", targetScore: 8, speed: 12, color: "#A0C4FF",
+                questions: [
+                    { q: "Kangurular karınlarında yavrularını taşıdıkları bir keseye sahiptir. 🦘", a: true },
+                    { q: "Devekuşları çok hızlı koşarlar ve çok yüksekten uçarlar. 🦅", a: false },
+                    { q: "Zürafaların boyunları çok uzundur, ağaç dallarına yetişir. 🦒", a: true },
+                    { q: "Ağaçların yaprakları sonbaharda dökülmez, sadece ilkbaharda dökülür. 🍂", a: false },
+                    { q: "Yunuslar denizlerde yaşayan, akıllı canlılardır. 🐬", a: true },
+                    { q: "İnsanlar su altında balıklar gibi nefes alabilirler. 🤿", a: false },
+                    { q: "Kütüphaneler sadece oyun oynamak içindir, kitap okunmaz. 📚", a: false },
+                    { q: "Kaktüs bitkisi genellikle sıcak çöllerde yetişir. 🌵", a: true }
+                ]
+            },
+            { 
+                level: 5, name: "Zihin Egzersizi", targetScore: 9, speed: 11, color: "#FFD6A5",
+                questions: [
+                    { q: "Kare şeklinin tam olarak dört köşesi ve dört kenarı vardır. 🟦", a: true },
+                    { q: "5 sayısına 3 eklersek 10 buluruz. 🔢", a: false },
+                    { q: "Güneş sistemimizde Dünya dışında başka gezegenler de vardır. 🪐", a: true },
+                    { q: "Mıknatıslar tahtayı çeker. 🧲", a: false },
+                    { q: "Ahtapotların sekiz tane kolu vardır. 🐙", a: true },
+                    { q: "Penguenler sıcak çöllerde yaşamayı çok severler. 🐧", a: false },
+                    { q: "Dinozorlar günümüzde hala yaşamaktadır ve sokakta dolaşırlar. 🦕", a: false },
+                    { q: "Teleskop kullanarak uzaktaki yıldızları görebiliriz. 🔭", a: true }
+                ]
+            },
+            { 
+                level: 6, name: "Mantık Avcısı", targetScore: 10, speed: 10, color: "#FFD6A5",
+                questions: [
+                    { q: "Ormanlar, dünyamızın daha temiz hava üretmesine yardımcı olur. 🌲", a: true },
+                    { q: "Sütün içine kakao katarsak pembe renkli çilekli süt olur. 🥛", a: false },
+                    { q: "Baykuşlar geceleri uyur, gündüzleri avlanırlar. 🦉", a: false },
+                    { q: "Bütün kuşlar uçabilir, örneğin tavuklar kartallar kadar yükseğe uçar. 🐔", a: false },
+                    { q: "Üçgen şeklinin üç tane köşesi vardır. 🔺", a: true },
+                    { q: "Güneş aslında devasa ve çok sıcak bir yıldızdır. ⭐", a: true },
+                    { q: "Demir çok hafif bir maddedir, suyun üstünde batmadan yüzer. ⚓", a: false },
+                    { q: "Kutup ayıları sadece Kuzey Kutbu çevresinde yaşar. 🐻‍❄️", a: true }
+                ]
+            },
+            { 
+                level: 7, name: "Hızlı Düşünür", targetScore: 11, speed: 9.5, color: "#D8BBFF",
+                questions: [
+                    { q: "Ay'ın kendi ışığı yoktur, sadece Güneş'in ışığını yansıtır. 🌕", a: true },
+                    { q: "Örümcekler böcek değildir, çünkü 8 bacakları vardır (böceklerin 6 bacağı olur). 🕷️", a: true },
+                    { q: "Balinalar balık değildir, suda yaşayan memeli hayvanlardır. 🐳", a: true },
+                    { q: "Deniz suyu çok tatlıdır ve çaya şeker gibi katılır. 🌊", a: false },
+                    { q: "Deve hörgücünde su değil, enerji için yağ depolar. 🐪", a: true },
+                    { q: "Çikolatanın ana maddesi çikolata ağacı değil, kakao çekirdeğidir. 🍫", a: true },
+                    { q: "1 dakika tam olarak 100 saniyeden oluşur. ⏱️", a: false },
+                    { q: "Yarasalar karanlıkta yönlerini bulmak için ses dalgalarını kullanır. 🦇", a: true }
+                ]
+            },
+            { 
+                level: 8, name: "Süper Odak", targetScore: 12, speed: 9, color: "#D8BBFF",
+                questions: [
+                    { q: "Köpek balıklarının iskeletleri kemikten değil, kıkırdaktan oluşur. 🦈", a: true },
+                    { q: "Güneş sistemi içerisindeki en büyük gezegen Dünya'dır. 🌍", a: false },
+                    { q: "Domates aslında bilimsel olarak bir sebze değil, meyvedir. 🍅", a: true },
+                    { q: "Bukalemunlar ruh hallerine veya ısıya göre renk değiştirebilirler. 🦎", a: true },
+                    { q: "Elmas dünyadaki en yumuşak taşlardan biridir. 💎", a: false },
+                    { q: "Salyangozların evleri sırtlarında taşıdıkları kabuklarıdır. 🐌", a: true },
+                    { q: "Arılar bir kraliçe arı önderliğinde çok düzenli koloniler kurarlar. 🐝", a: true },
+                    { q: "Kaktüsler suyu gövdelerinde aylarca depolayamazlar, hemen kururlar. 🌵", a: false }
+                ]
+            },
+            { 
+                level: 9, name: "Zeka Ustası", targetScore: 13, speed: 8.5, color: "#FFC6FF",
+                questions: [
+                    { q: "Kar tanelerinin hiçbiri diğerine tamamen benzemez. ❄️", a: true },
+                    { q: "Ayçiçekleri büyürken yüzlerini sürekli olarak Güneş'e doğru çevirirler. 🌻", a: true },
+                    { q: "Uzayda yerçekimi Dünya'daki ile aynıdır, her şey yere düşer. 🚀", a: false },
+                    { q: "Pandaların diyeti (yedikleri yemek) sadece etten oluşur. 🐼", a: false },
+                    { q: "Dünya kendi etrafında dönmesini 24 saatte (1 günde) tamamlar. 🔄", a: true },
+                    { q: "Tırtılların ayak sayısı insanlarınkinden daha fazladır. 🐛", a: true },
+                    { q: "Cam ağaçların yapraklarından üretilir. 🪟", a: false },
+                    { q: "Venüs gezegeni Güneş sisteminin en sıcak gezegenidir. 🔥", a: true }
+                ]
+            },
+            { 
+                level: 10, name: "Bilgi Şampiyonu", targetScore: 15, speed: 8, color: "#FFC6FF",
+                questions: [
+                    { q: "Dünya üzerinde en hızlı koşan kara hayvanı çitadır. 🐆", a: true },
+                    { q: "Okyanuslardaki suların derinliklerinde hiçbir canlı yaşayamaz. 🌊", a: false },
+                    { q: "İnsan beyni de bilgisayarlar gibi elektrik sinyalleri ile çalışır. 🧠", a: true },
+                    { q: "Mısır piramitleri uzaylılar tarafından inşa edilmiştir. 🇪🇬", a: false },
+                    { q: "Bambu bitkisi dünyadaki en hızlı büyüyen bitkilerden biridir, günde 1 metreye kadar uzayabilir. 🎋", a: true },
+                    { q: "Zürafaların dili mavi veya morumsu siyah bir renktedir. 🦒", a: true },
+                    { q: "Kutup bölgelerinde altı ay boyunca sadece gündüz veya sadece gece yaşanabilir. ☀️", a: true },
+                    { q: "Tarihteki ilk bilgisayarlar cebimize sığacak kadar küçüktü. 💻", a: false },
+                    { q: "Plüton artık gezegen değil, 'cüce gezegen' olarak kabul edilmektedir. 🌌", a: true },
+                    { q: "Güneş, gezegenler gibi katı kayalardan oluşur, üzerine basabiliriz. ☀️", a: false }
+                ]
+            }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
+        const questionsPool = cfg.questions;
         let score = 0;
         let lives = 3;
         let incorrectCount = 0;
@@ -3272,6 +3435,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let remainingTime = cfg.speed;
         let shuffledQuestions = [];
         let questionIndex = 0;
+        let isProcessingAnswer = false;
 
         const tabsHTML = LEVELS.map(l => {
             const isUnlocked = isLevelUnlocked(8, l.level);
@@ -3279,6 +3443,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }).join('');
 
         function loadQuestion() {
+            isProcessingAnswer = false;
             remainingTime = cfg.speed;
             if (shuffledQuestions.length === 0 || questionIndex >= shuffledQuestions.length) {
                 shuffledQuestions = [...questionsPool].sort(() => Math.random() - 0.5);
@@ -3328,6 +3493,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             container.querySelectorAll(".level-tab").forEach(tab => {
                 tab.addEventListener("click", () => {
+                    if (tab.hasAttribute("disabled")) return;
                     const next = parseInt(tab.dataset.level);
                     if (next === levelNumber) return;
                     playSound('click');
@@ -3377,6 +3543,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 
                 if (remainingTime <= 0) {
+                    if (isProcessingAnswer) return;
+                    isProcessingAnswer = true;
                     clearInterval(questionTimer);
                     lives--;
                     updateLivesDisplay();
@@ -3395,6 +3563,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function evaluateAnswer(userAnswer) {
+            if (isProcessingAnswer) return;
+            isProcessingAnswer = true;
+
             if (questionTimer) clearInterval(questionTimer);
 
             const isCorrect = userAnswer === currentQuestion.a;
@@ -3456,6 +3627,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (questionTimer) clearInterval(questionTimer);
             clearInterval(activeGameTimer);
         }
+        window.currentGameCleanup = cleanUp;
 
         function endGame(isWin) {
             cleanUp();
@@ -3565,41 +3737,29 @@ document.addEventListener("DOMContentLoaded", () => {
     // HIZLI SAYMA (MATEMATİK) OYUN MOTORU
     // ============================================================
     function startNumberChaseGame(container, levelNumber) {
-        if (activeGameTimer) {
-            clearInterval(activeGameTimer);
-        }
+        if (window.currentGameCleanup) { window.currentGameCleanup(); window.currentGameCleanup = null; }
+        if (activeGameTimer) { clearInterval(activeGameTimer); }
 
         const LEVELS = [
-            { level: 1, name: "1'den 9'a Kadar", size: 3, maxVal: 9, color: "#CAFFBF" },
-            { level: 2, name: "Sayı Dedektifi", size: 3, maxVal: 9, color: "#CAFFBF" },
-            { level: 3, name: "1'den 12'ye Saymaca", size: 4, maxVal: 12, color: "#A0C4FF" },
-            { level: 4, name: "Kolay Kaçış", size: 4, maxVal: 12, color: "#A0C4FF" },
-            { level: 5, name: "1'den 16'ya Saymaca", size: 4, maxVal: 16, color: "#FFD6A5" },
-            { level: 6, name: "Odaklanma Ustası", size: 4, maxVal: 16, color: "#FFD6A5" },
-            { level: 7, name: "Sayı Şampiyonu", size: 5, maxVal: 20, color: "#D8BBFF" },
-            { level: 8, name: "Hızlı Kovalamaca", size: 5, maxVal: 20, color: "#D8BBFF" },
-            { level: 9, name: "Sayı Kralı", size: 5, maxVal: 25, color: "#FFADAD" },
-            { level: 10, name: "Efsanevi Sayıcı", size: 5, maxVal: 25, color: "#FFC6FF" }
+            { level: 1, name: "5'ten küçükleri yakala!", check: (n) => n < 5, min: 1, max: 9, target: 5, speed: 4500, spawnRate: 1500, color: "#CAFFBF" },
+            { level: 2, name: "5'ten büyükleri yakala!", check: (n) => n > 5, min: 1, max: 10, target: 6, speed: 4000, spawnRate: 1400, color: "#CAFFBF" },
+            { level: 3, name: "Çift sayıları yakala!", check: (n) => n % 2 === 0, min: 1, max: 10, target: 8, speed: 4000, spawnRate: 1300, color: "#A0C4FF" },
+            { level: 4, name: "Tek sayıları yakala!", check: (n) => n % 2 !== 0, min: 1, max: 10, target: 8, speed: 3800, spawnRate: 1200, color: "#A0C4FF" },
+            { level: 5, name: "10'dan büyükleri yakala!", check: (n) => n > 10, min: 1, max: 20, target: 10, speed: 3800, spawnRate: 1100, color: "#FFD6A5" },
+            { level: 6, name: "10-20 arasındakileri yakala!", check: (n) => n > 10 && n < 20, min: 5, max: 25, target: 10, speed: 3500, spawnRate: 1100, color: "#FFD6A5" },
+            { level: 7, name: "10'un katlarını yakala!", check: (n) => n % 10 === 0, min: 5, max: 50, target: 12, speed: 3500, spawnRate: 1000, color: "#D8BBFF" },
+            { level: 8, name: "Sonu 5 olanları yakala!", check: (n) => n % 10 === 5, min: 5, max: 50, target: 12, speed: 3200, spawnRate: 1000, color: "#D8BBFF" },
+            { level: 9, name: "Çiftleri yakala (Hızlı!)", check: (n) => n % 2 === 0, min: 10, max: 50, target: 15, speed: 3000, spawnRate: 900, color: "#FFADAD" },
+            { level: 10, name: "Tekleri yakala (Şimşek Hızı!)", check: (n) => n % 2 !== 0, min: 10, max: 99, target: 15, speed: 2800, spawnRate: 800, color: "#FFC6FF" }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
-        let nextTarget = 1;
         let lives = 3;
+        let progress = 0;
         let timeElapsed = 0;
         let incorrectCount = 0;
         let gameActive = true;
-
-        let numbers = Array.from({ length: cfg.maxVal }, (_, idx) => idx + 1);
-        
-        function shuffle(arr) {
-            const a = [...arr];
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a;
-        }
-        numbers = shuffle(numbers);
+        let spawnInterval = null;
 
         const tabsHTML = LEVELS.map(l => {
             const isUnlocked = isLevelUnlocked(9, l.level);
@@ -3607,37 +3767,190 @@ document.addEventListener("DOMContentLoaded", () => {
         }).join('');
 
         container.innerHTML = `
-            <div class="number-chase-game" style="text-align:center; padding:10px 0; user-select:none;">
-                <div class="level-tabs">${tabsHTML}</div>
-                <div style="font-size:1.1rem; font-weight:800; margin-bottom:12px; color:var(--text-main);">
-                    🎯 Sıradaki Sayı: <span id="number-chase-target" style="font-size:1.7rem; color:#ef4444;">1</span>
+            <div class="number-chase-game" style="text-align:center; padding:10px 0; user-select:none; display:flex; flex-direction:column; height:450px;">
+                <div class="level-tabs" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px; border-bottom:2px solid var(--border-color);" class="scroll-hide">${tabsHTML}</div>
+                <div style="font-size:1.1rem; font-weight:800; margin-bottom:8px; color:#92400e; background:${cfg.color}; padding:8px; border-radius:12px; border:2px solid #b45309;">
+                    🎯 Görev: <span>${cfg.name}</span>
                 </div>
-                <div class="game-stats">
-                    <div class="stat-item">
-                        <i data-lucide="timer" style="width:16px;height:16px;"></i>
-                        <span id="game-timer">0</span>sn
-                    </div>
-                    <div class="stat-item" id="chase-lives" style="display:flex; gap:4px;">
-                        <!-- Hearts -->
-                    </div>
-                    <div class="stat-item">
-                        <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
-                        İlerleme: <span id="chase-progress">0</span>/${cfg.maxVal}
-                    </div>
+                <div class="game-stats" style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700;">
+                    <div class="stat-item" id="chase-lives" style="display:flex; gap:4px; align-items:center;"></div>
+                    <div class="stat-item"><span id="game-timer">0</span>sn</div>
+                    <div class="stat-item">İlerleme: <span id="chase-progress">0</span>/${cfg.target}</div>
                 </div>
-                <div class="number-grid-chase" id="chase-grid" style="display:grid; grid-template-columns:repeat(${cfg.size}, 1fr); gap:8px; max-width:300px; margin:0 auto;">
-                    ${numbers.map(n => `
-                        <button class="chase-cell" data-val="${n}" style="aspect-ratio:1; font-size:1.6rem; font-weight:800; border-radius:14px; border:2px solid var(--border-color); background:var(--bg-card); cursor:pointer; transition:all 0.1s ease; box-shadow:var(--shadow-small); color:var(--text-main);">${n}</button>
-                    `).join('')}
+                <div id="game-area" style="position:relative; flex:1; background:linear-gradient(to bottom, #bae6fd, #e0f2fe); border-radius:12px; border:2px solid #0284c7; overflow:hidden;">
+                    <!-- Yağmur damlaları buraya düşecek -->
                 </div>
-                <button class="btn btn-locked" id="btn-give-up" style="width:100%; font-size:0.82rem; margin-top:12px;">
+                <button class="btn btn-locked" id="btn-give-up" style="width:100%; font-size:0.82rem; margin-top:12px; padding:10px;">
                     🏳️ Vazgeç & Kapat
                 </button>
             </div>
         `;
 
-        lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
         updateLivesDisplay();
+
+        const gameArea = container.querySelector("#game-area");
+
+        function updateLivesDisplay() {
+            const livesEl = document.getElementById("chase-lives");
+            if (!livesEl) return;
+            livesEl.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement("div");
+                heart.innerHTML = i < lives ? "❤️" : "🖤";
+                livesEl.appendChild(heart);
+            }
+        }
+
+        function cleanUp() {
+            gameActive = false;
+            if (spawnInterval) clearInterval(spawnInterval);
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+        }
+        window.currentGameCleanup = cleanUp;
+
+        function spawnDrop() {
+            if (!gameActive) return;
+            
+            // %50 ihtimalle doğru sayı, %50 ihtimalle yanlış sayı
+            let isCorrectTarget = Math.random() < 0.5;
+            let num;
+            let attempts = 0;
+            do {
+                num = Math.floor(Math.random() * (cfg.max - cfg.min + 1)) + cfg.min;
+                attempts++;
+            } while (cfg.check(num) !== isCorrectTarget && attempts < 50);
+
+            const drop = document.createElement("div");
+            drop.innerText = num;
+            drop.style.position = "absolute";
+            const startX = 5 + Math.random() * 75; // Genişlikten taşmaması için %5 ile %80 arası
+            drop.style.left = startX + "%";
+            drop.style.top = "-50px";
+            drop.style.width = "46px";
+            drop.style.height = "46px";
+            drop.style.display = "flex";
+            drop.style.alignItems = "center";
+            drop.style.justifyContent = "center";
+            drop.style.fontWeight = "900";
+            drop.style.fontSize = "1.3rem";
+            drop.style.color = "#0c4a6e";
+            drop.style.background = "#fff";
+            drop.style.border = "3px solid #38bdf8";
+            drop.style.borderRadius = "50%"; 
+            drop.style.boxShadow = "0 4px 6px rgba(0,0,0,0.15)";
+            drop.style.cursor = "pointer";
+            drop.style.zIndex = "10";
+
+            gameArea.appendChild(drop);
+
+            const animation = drop.animate([
+                { top: '-50px' },
+                { top: '100%' }
+            ], {
+                duration: cfg.speed,
+                easing: 'linear',
+                fill: 'forwards'
+            });
+
+            let clicked = false;
+
+            drop.addEventListener("click", () => {
+                if (!gameActive || clicked) return;
+                clicked = true;
+                animation.pause();
+                
+                if (cfg.check(num)) {
+                    // DOĞRU!
+                    playSound('success');
+                    drop.style.background = "#4ade80"; // yeşil
+                    drop.style.borderColor = "#166534";
+                    drop.style.color = "#166534";
+                    drop.style.transform = "scale(1.3)";
+                    progress++;
+                    const progEl = container.querySelector("#chase-progress");
+                    if (progEl) progEl.innerText = progress;
+                    
+                    setTimeout(() => { if(drop.parentNode) drop.remove(); }, 200);
+
+                    if (progress >= cfg.target) {
+                        endGame(true);
+                    }
+                } else {
+                    // YANLIŞ!
+                    playSound('locked');
+                    drop.style.background = "#ef4444"; // kırmızı
+                    drop.style.borderColor = "#7f1d1d";
+                    drop.style.color = "#fff";
+                    drop.style.animation = "shake 0.3s ease";
+                    lives--;
+                    incorrectCount++;
+                    updateLivesDisplay();
+                    
+                    setTimeout(() => { if(drop.parentNode) drop.remove(); }, 300);
+
+                    if (lives <= 0) {
+                        endGame(false);
+                    }
+                }
+            });
+
+            animation.onfinish = () => {
+                if (!gameActive || clicked) return;
+                // Damla yere düştü (tıklanamadı)
+                if (cfg.check(num)) {
+                    // Doğru sayıyı KAÇIRDI! Can gider.
+                    lives--;
+                    updateLivesDisplay();
+                    playSound('locked');
+                    if (lives <= 0) {
+                        endGame(false);
+                    }
+                }
+                if(drop.parentNode) drop.remove();
+            };
+        }
+
+        // Geri sayım
+        const countdownEl = document.createElement("div");
+        countdownEl.style.position = "absolute";
+        countdownEl.style.top = "50%";
+        countdownEl.style.left = "50%";
+        countdownEl.style.transform = "translate(-50%, -50%)";
+        countdownEl.style.fontSize = "5rem";
+        countdownEl.style.fontWeight = "900";
+        countdownEl.style.color = "#ea580c";
+        countdownEl.style.textShadow = "2px 2px 0px #fff, -2px -2px 0px #fff, 2px -2px 0px #fff, -2px 2px 0px #fff";
+        countdownEl.style.zIndex = "100";
+        gameArea.appendChild(countdownEl);
+
+        let count = 3;
+        countdownEl.innerText = count;
+        playSound('click');
+        
+        let countInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownEl.innerText = count;
+                playSound('click');
+            } else {
+                clearInterval(countInterval);
+                countdownEl.innerText = "BAŞLA!";
+                setTimeout(() => {
+                    if (countdownEl.parentNode) countdownEl.remove();
+                    if (gameActive) {
+                        spawnInterval = setInterval(spawnDrop, cfg.spawnRate);
+                        
+                        activeGameTimer = setInterval(() => {
+                            if (!gameActive) return;
+                            timeElapsed++;
+                            const timerEl = document.getElementById("game-timer");
+                            if (timerEl) timerEl.innerText = timeElapsed;
+                        }, 1000);
+                    }
+                }, 800);
+            }
+        }, 1000);
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
@@ -3646,6 +3959,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (next === levelNumber) return;
                 playSound('click');
                 cleanUp();
+                clearInterval(countInterval);
                 startNumberChaseGame(container, next);
             });
         });
@@ -3653,81 +3967,14 @@ document.addEventListener("DOMContentLoaded", () => {
         container.querySelector("#btn-give-up").addEventListener("click", () => {
             playSound('locked');
             cleanUp();
+            clearInterval(countInterval);
             closeModal();
         });
 
-        function cleanUp() {
-            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
-        }
-
-        function updateLivesDisplay() {
-            const livesEl = document.getElementById("chase-lives");
-            if (!livesEl) return;
-            livesEl.innerHTML = "";
-            for (let i = 0; i < 3; i++) {
-                const heart = document.createElement("i");
-                heart.style.width = "16px";
-                heart.style.height = "16px";
-                heart.setAttribute("data-lucide", "heart");
-                if (i < lives) {
-                    heart.style.fill = "#ef4444";
-                    heart.style.color = "#ef4444";
-                } else {
-                    heart.style.fill = "none";
-                    heart.style.color = "var(--text-muted)";
-                    heart.style.opacity = "0.3";
-                }
-                livesEl.appendChild(heart);
-            }
-            lucide.createIcons();
-        }
-
-        container.querySelectorAll(".chase-cell").forEach(cell => {
-            cell.addEventListener("click", () => {
-                if (!gameActive) return;
-                const val = parseInt(cell.getAttribute("data-val"));
-
-                if (val === nextTarget) {
-                    playSound('success');
-                    cell.style.background = "var(--pastel-green)";
-                    cell.style.borderColor = "#166534";
-                    cell.style.color = "#166534";
-                    cell.style.opacity = "0.4";
-                    cell.style.pointerEvents = "none";
-
-                    const progressEl = document.getElementById("chase-progress");
-                    if (progressEl) progressEl.innerText = nextTarget;
-
-                    nextTarget++;
-                    const targetEl = document.getElementById("number-chase-target");
-                    if (targetEl) targetEl.innerText = nextTarget <= cfg.maxVal ? nextTarget : "Bitti!";
-
-                    if (nextTarget > cfg.maxVal) {
-                        endGame(true);
-                    }
-                } else {
-                    lives--;
-                    updateLivesDisplay();
-                    incorrectCount++;
-                    playSound('locked');
-                    cell.style.animation = "shake 0.3s ease";
-                    cell.style.background = "var(--pastel-red)";
-                    cell.style.borderColor = "#ef4444";
-                    setTimeout(() => {
-                        cell.style.animation = "";
-                        cell.style.background = "var(--bg-card)";
-                        cell.style.borderColor = "var(--border-color)";
-                    }, 400);
-
-                    if (lives <= 0) {
-                        endGame(false);
-                    }
-                }
-            });
-        });
-
         function endGame(isWin) {
+            gameActive = false;
             cleanUp();
+            clearInterval(countInterval);
 
             if (isWin) {
                 unlockNextLevel(9, levelNumber);
@@ -3741,15 +3988,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 ach.userStats.stars += starsAwarded;
                 ach.userStats.totalScore += scoreAwarded;
                 ach.userStats.completedGames += 1;
+                
+                const task1 = ach.dailyTasks.find(t => t.id === 1);
+                if (task1 && !task1.completed) {
+                    task1.completed = true;
+                    ach.userStats.stars += task1.reward;
+                }
+                const done = ach.dailyTasks.filter(t => t.completed).length;
+                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
 
                 setTimeout(() => {
                     container.innerHTML = `
                         <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">⚡🏆</div>
-                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Sayı Canavarı!</div>
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">💧🏆</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Sayı Avcısı!</div>
                             <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Sayıları <strong>${timeElapsed} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile kovaladın!
+                                Görevi <strong>${timeElapsed} saniyede</strong> ve <strong>${incorrectCount} hata</strong> ile başardın!
                             </p>
                             
                             <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
@@ -3765,7 +4020,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                                ${levelNumber < 10 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
@@ -3793,10 +4048,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     container.innerHTML = `
                         <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥🔢</div>
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥💧</div>
                             <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Canların Tükendi!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Yanlış sayılara bastın ve canların bitti. 1 global can kaybettin!
+                                Yanlış damlalara bastın ya da doğru olanları kaçırdın. 3 canın bitti! 1 global can kaybettin!
                             </p>
                             <div style="display:flex; gap:10px; justify-content:center;">
                                 <button class="btn btn-primary" id="btn-replay-fail" style="flex:1; max-width:160px;">🔄 Tekrar Dene</button>
@@ -3816,13 +4071,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }, 600);
             }
         }
-
-        activeGameTimer = setInterval(() => {
-            timeElapsed++;
-            const timerEl = document.getElementById("game-timer");
-            if (timerEl) timerEl.innerText = timeElapsed;
-            else { cleanUp(); }
-        }, 1000);
     }
     // ============================================================
     // RİTMİK HAFIZA (HAFIZA/DİKKAT) OYUN MOTORU
@@ -3921,9 +4169,17 @@ document.addEventListener("DOMContentLoaded", () => {
             closeModal();
         });
 
+        let countInterval = null;
+        let sequenceInterval = null;
+
         function cleanUp() {
             gameActive = false;
+            isShowingSequence = false;
+            if (countInterval) clearInterval(countInterval);
+            if (sequenceInterval) clearInterval(sequenceInterval);
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
         }
+        window.currentGameCleanup = cleanUp;
 
         function updateLivesUI() {
             hearts.forEach((heart, idx) => {
@@ -4007,9 +4263,9 @@ document.addEventListener("DOMContentLoaded", () => {
             playerIndex = 0;
 
             let idx = 0;
-            const interval = setInterval(() => {
+            sequenceInterval = setInterval(() => {
                 if (!isShowingSequence) {
-                    clearInterval(interval);
+                    clearInterval(sequenceInterval);
                     return;
                 }
 
@@ -4019,7 +4275,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     flashPad(pad, padId);
                     idx++;
                 } else {
-                    clearInterval(interval);
+                    clearInterval(sequenceInterval);
                     isShowingSequence = false;
                     promptEl.innerText = "ŞİMDİ SEN DENE! 🫵";
                     gameActive = true;
@@ -4130,7 +4386,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let countdown = 3;
         promptEl.innerText = `Hazırlan: ${countdown}`;
-        const countInterval = setInterval(() => {
+        countInterval = setInterval(() => {
             countdown--;
             if (countdown > 0) {
                 promptEl.innerText = `Hazırlan: ${countdown}`;
@@ -4142,16 +4398,570 @@ document.addEventListener("DOMContentLoaded", () => {
                 showSequence();
             }
         }, 1000);
-
-        activeGameTimer = setInterval(() => {
-            if (!gameActive) {
-                clearInterval(activeGameTimer);
-                clearInterval(countInterval);
-            }
-        }, 100);
     }
+    // ============================================================
+    // GİZLİ OBJE AVI (OYUN 11) OYUN MOTORU
+    // ============================================================
+    function startHiddenObjectGame(container, levelNumber) {
+        if (window.currentGameCleanup) { window.currentGameCleanup(); window.currentGameCleanup = null; }
+        if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+
+        const LEVELS = [
+            { level: 1, name: "Tanışma Turu", targetEmoji: "🍎", distractors: ["🍓", "🍒", "🍅"], distractorCount: 30, targetCount: 3, speed: 20, color: "#CAFFBF" },
+            { level: 2, name: "Kolay Arama", targetEmoji: "🐶", distractors: ["🐱", "🐭", "🐹"], distractorCount: 50, targetCount: 4, speed: 25, color: "#CAFFBF" },
+            { level: 3, name: "Dikkatli Gözler", targetEmoji: "🏀", distractors: ["⚾", "🥎", "🏐"], distractorCount: 80, targetCount: 5, speed: 30, color: "#A0C4FF" },
+            { level: 4, name: "Kalabalık", targetEmoji: "🌻", distractors: ["🌼", "🌸", "🌺", "🏵️"], distractorCount: 120, targetCount: 5, speed: 35, color: "#A0C4FF" },
+            { level: 5, name: "Karışık Zihin", targetEmoji: "🍕", distractors: ["🍔", "🌭", "🌮", "🥪"], distractorCount: 160, targetCount: 6, speed: 40, color: "#FFD6A5" },
+            { level: 6, name: "Hız Şart", targetEmoji: "🚗", distractors: ["🚕", "🚙", "🚐", "🚓"], distractorCount: 200, targetCount: 6, speed: 45, color: "#FFD6A5" },
+            { level: 7, name: "İkiz Kardeşler", targetEmoji: "🐼", distractors: ["🐨", "🐻", "🐮", "🐷"], distractorCount: 250, targetCount: 7, speed: 50, color: "#D8BBFF" },
+            { level: 8, name: "Gölgelerin Gücü", targetEmoji: "🦉", distractors: ["🦅", "🦆", "🦢", "🦜"], distractorCount: 300, targetCount: 7, speed: 55, color: "#D8BBFF" },
+            { level: 9, name: "Kaos Başlıyor", targetEmoji: "💎", distractors: ["💍", "👑", "🔮", "🧿"], distractorCount: 350, targetCount: 8, speed: 60, color: "#FFC6FF" },
+            { level: 10, name: "Dedektif", targetEmoji: "🦁", distractors: ["🐯", "🐻", "🐱", "🦊", "🐶", "🐺"], distractorCount: 450, targetCount: 1, speed: 60, color: "#FFC6FF" }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let gameActive = true;
+        let lives = 3;
+        let foundCount = 0;
+        let timeElapsed = 0;
+        let remainingTime = cfg.speed;
+        let countdownTimer = null;
+
+        function cleanUp() {
+            gameActive = false;
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+        }
+        window.currentGameCleanup = cleanUp;
+
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(11, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
+
+        container.innerHTML = `
+            <div class="hidden-object-game" style="text-align:center; padding:10px 0; user-select:none; display:flex; flex-direction:column; height:480px;">
+                <div class="level-tabs" style="display:flex; gap:4px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px; justify-content:start;">
+                    ${tabsHTML}
+                </div>
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.03); padding:8px 12px; border-radius:12px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div class="game-lives" id="ho-lives" style="display:flex; gap:4px;"></div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
+                        Süre: <span id="ho-timer" style="color:#ef4444;">${remainingTime}</span>sn
+                    </div>
+                </div>
+                <div style="font-size:1.1rem; font-weight:800; margin-bottom:8px; color:#166534; background:${cfg.color}; padding:8px; border-radius:12px; border:2px solid #14532D;">
+                    Hedef: Hepsini Bul! <span style="font-size:1.5rem; vertical-align:middle; margin-left:10px;">${cfg.targetEmoji}</span> (<span id="ho-progress">0</span>/${cfg.targetCount})
+                </div>
+                <div id="ho-area" style="position:relative; flex:1; background:linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius:12px; border:2px solid rgba(0,0,0,0.1); overflow:hidden; box-shadow:inset 0 4px 6px rgba(0,0,0,0.05);">
+                </div>
+            </div>
+        `;
+
+        const area = container.querySelector("#ho-area");
+        
+        function updateLivesDisplay() {
+            const livesEl = container.querySelector("#ho-lives");
+            if (!livesEl) return;
+            livesEl.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement("i");
+                heart.style.width = "16px";
+                heart.style.height = "16px";
+                heart.setAttribute("data-lucide", "heart");
+                if (i < lives) {
+                    heart.style.fill = "#ef4444";
+                    heart.style.color = "#ef4444";
+                } else {
+                    heart.style.fill = "none";
+                    heart.style.color = "var(--text-muted)";
+                    heart.style.opacity = "0.3";
+                }
+                livesEl.appendChild(heart);
+            }
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        updateLivesDisplay();
+
+        container.querySelectorAll(".level-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
+                const next = parseInt(tab.dataset.level);
+                if (next === levelNumber) return;
+                playSound('click');
+                cleanUp();
+                startHiddenObjectGame(container, next);
+            });
+        });
+
+        // Objeleri oluştur
+        const objects = [];
+        for(let i=0; i<cfg.targetCount; i++) {
+            objects.push({ emoji: cfg.targetEmoji, isTarget: true });
+        }
+        for(let i=0; i<cfg.distractorCount; i++) {
+            const randomDistractor = cfg.distractors[Math.floor(Math.random() * cfg.distractors.length)];
+            objects.push({ emoji: randomDistractor, isTarget: false });
+        }
+        
+        // Rastgele karıştır
+        objects.sort(() => Math.random() - 0.5);
+
+        // Ekran boyutları render olduktan sonra belli olur, küçük bir timeout veriyoruz
+        setTimeout(() => {
+            if(!gameActive) return;
+            const areaW = area.clientWidth;
+            const areaH = area.clientHeight;
+
+            objects.forEach((obj) => {
+                const el = document.createElement("div");
+                el.innerText = obj.emoji;
+                el.style.position = "absolute";
+                el.style.fontSize = (Math.random() * 0.8 + 1.2) + "rem";
+                el.style.cursor = "pointer";
+                el.style.transition = "transform 0.2s, opacity 0.3s";
+                
+                // Rotation
+                const rot = Math.random() * 360;
+                el.style.transform = `rotate(${rot}deg)`;
+                
+                // Konum (60px padding/margin payı)
+                const left = 20 + Math.random() * (areaW - 70);
+                const top = 20 + Math.random() * (areaH - 70);
+                el.style.left = left + "px";
+                el.style.top = top + "px";
+                
+                // Hedeflerin üstte kalmasını sağla
+                if (obj.isTarget) {
+                    el.style.zIndex = "999";
+                } else {
+                    el.style.zIndex = Math.floor(Math.random() * 100).toString();
+                }
+
+                // Tıklama event'i
+                el.addEventListener("click", (e) => {
+                    if (!gameActive) return;
+                    e.stopPropagation();
+                    
+                    if (obj.isTarget) {
+                        playSound('click');
+                        el.style.transform = "scale(2)";
+                        el.style.opacity = "0";
+                        el.style.pointerEvents = "none";
+                        foundCount++;
+                        document.getElementById("ho-progress").innerText = foundCount;
+                        
+                        if (foundCount >= cfg.targetCount) {
+                            endGame(true);
+                        }
+                    } else {
+                        playSound('locked');
+                        lives--;
+                        updateLivesDisplay();
+                        area.style.animation = "shake 0.3s ease";
+                        setTimeout(() => { area.style.animation = ""; }, 300);
+                        
+                        if (lives <= 0) {
+                            endGame(false);
+                        }
+                    }
+                });
+                area.appendChild(el);
+            });
+            
+            // Başla
+            countdownTimer = setInterval(() => {
+                if (!gameActive) return;
+                remainingTime--;
+                document.getElementById("ho-timer").innerText = remainingTime;
+                
+                if (remainingTime <= 0) {
+                    lives = 0;
+                    updateLivesDisplay();
+                    endGame(false);
+                }
+            }, 1000);
+            
+            activeGameTimer = setInterval(() => {
+                if (!gameActive) return;
+                timeElapsed++;
+            }, 1000);
+            
+        }, 50);
+
+        function endGame(isWin) {
+            cleanUp();
+            
+            if (isWin) {
+                unlockNextLevel(11, levelNumber);
+                playSound('success');
+
+                const scoreBase = 70 * levelNumber;
+                const scoreAwarded = scoreBase + Math.max(0, remainingTime * 5);
+                const starsAwarded = remainingTime > (cfg.speed * 0.6) ? 25 : (remainingTime > (cfg.speed * 0.3) ? 15 : 10);
+
+                const ach = window.achievementsData;
+                ach.userStats.stars += starsAwarded;
+                ach.userStats.totalScore += scoreAwarded;
+                ach.userStats.completedGames += 1;
+
+                const task1 = ach.dailyTasks.find(t => t.id === 1);
+                if (task1 && !task1.completed) {
+                    task1.completed = true;
+                    ach.userStats.stars += task1.reward;
+                }
+
+                const done = ach.dailyTasks.filter(t => t.completed).length;
+                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🎯🏆</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Keskin Gözler!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Objeleri <strong>${timeElapsed} saniyede</strong> buldun! Kalan Süre: ${remainingTime}
+                            </p>
+                            
+                            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                                </div>
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar</button>
+                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Svy ${levelNumber + 1}</button>` : ''}
+                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay").addEventListener("click", () => { playSound('click'); startHiddenObjectGame(container, levelNumber); });
+                    if (levelNumber < 10) {
+                        container.querySelector("#btn-next-level").addEventListener("click", () => { playSound('click'); startHiddenObjectGame(container, levelNumber + 1); });
+                    }
+                    container.querySelector("#btn-finish-win").addEventListener("click", () => { playSound('click'); closeModal(); renderAchievements(); });
+                }, 400);
+            } else {
+                lockGame(11);
+                playSound('locked');
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Canlar veya Süre Bitti!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">Görev başarısız oldu. 1 global can kaybettin!</p>
+                            <div style="display:flex; gap:10px; justify-content:center;">
+                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
+                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay-fail").addEventListener("click", () => { playSound('click'); startHiddenObjectGame(container, levelNumber); });
+                    container.querySelector("#btn-close-fail").addEventListener("click", () => { playSound('click'); closeModal(); });
+                }, 400);
+            }
+        }
+    }
+
+    // ============================================================
+    // MANTIK KÖPRÜSÜ (OYUN 12) OYUN MOTORU
+    // ============================================================
+    function startLogicBridgeGame(container, levelNumber) {
+        if (window.currentGameCleanup) { window.currentGameCleanup(); window.currentGameCleanup = null; }
+        if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+
+        const LEVELS = [
+            { level: 1, name: "Renk Örüntüsü", q: "🔴 🔵 🔴 🔵 ?", options: ["🔴", "🔵", "🟢", "🟡"], answer: "🔴", speed: 30 },
+            { level: 2, name: "Şekil Örüntüsü", q: "⭐ 🌙 ⭐ 🌙 ⭐ ?", options: ["⭐", "☀️", "🌙", "☁️"], answer: "🌙", speed: 30 },
+            { level: 3, name: "Sayılar", q: "1, 2, 3, 4, ?", options: ["4", "5", "6", "7"], answer: "5", speed: 30 },
+            { level: 4, name: "Çifter Çifter", q: "2, 4, 6, 8, ?", options: ["9", "10", "11", "12"], answer: "10", speed: 30 },
+            { level: 5, name: "Meyve Sepeti", q: "🍎 🍌 🍎 🍌 ?", options: ["🍇", "🍎", "🍌", "🍉"], answer: "🍎", speed: 40 },
+            { level: 6, name: "Hayvan Eşleştirme", q: "🐶:🦴 | 🐱:🐟 | 🐰:?", options: ["🥕", "🥩", "🍎", "🧀"], answer: "🥕", speed: 40 },
+            { level: 7, name: "Geri Sayım", q: "20, 15, 10, ?", options: ["0", "5", "10", "1"], answer: "5", speed: 40 },
+            { level: 8, name: "Geometrik", q: "🔺 🟩 ⚪ 🔺 🟩 ?", options: ["🔺", "🟩", "⚪", "⭐"], answer: "⚪", speed: 40 },
+            { level: 9, name: "Katlanarak Büyüme", q: "1, 2, 4, 8, ?", options: ["10", "12", "14", "16"], answer: "16", speed: 40 },
+            { level: 10, name: "Zihin Fırtınası", q: "A, C, E, G, ?", options: ["H", "I", "J", "K"], answer: "I", speed: 40 }
+        ];
+
+        const cfg = LEVELS[levelNumber - 1];
+        let gameActive = true;
+        let lives = 3;
+        let timeElapsed = 0;
+        let remainingTime = cfg.speed;
+        let countdownTimer = null;
+
+        function cleanUp() {
+            gameActive = false;
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+        }
+        window.currentGameCleanup = cleanUp;
+
+        const tabsHTML = LEVELS.map(l => {
+            const isUnlocked = isLevelUnlocked(12, l.level);
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+        }).join('');
+
+        // Seçenekleri rastgele karıştırıyoruz (referansı bozmamak için kopyala)
+        const opts = [...cfg.options].sort(() => Math.random() - 0.5);
+
+        container.innerHTML = `
+            <div class="logic-bridge-game" style="text-align:center; padding:10px 0; user-select:none; display:flex; flex-direction:column; height:480px;">
+                <div class="level-tabs" style="display:flex; gap:4px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px; justify-content:start;">
+                    ${tabsHTML}
+                </div>
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(0,0,0,0.03); padding:8px 12px; border-radius:12px;">
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
+                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+                    </div>
+                    <div class="game-lives" id="lb-lives" style="display:flex; gap:4px;"></div>
+                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
+                        Süre: <span id="lb-timer" style="color:#ef4444;">${remainingTime}</span>sn
+                    </div>
+                </div>
+                
+                <div style="font-size:1.8rem; font-weight:800; margin-bottom:15px; color:#1e3a8a; background:#bfdbfe; padding:15px; border-radius:12px; border:3px solid #1e40af; letter-spacing: 2px;">
+                    ${cfg.q}
+                </div>
+                
+                <div id="lb-scene" style="position:relative; flex:1; background:linear-gradient(to bottom, #7dd3fc, #bae6fd); border-radius:12px; border:2px solid rgba(0,0,0,0.1); overflow:hidden; box-shadow:inset 0 4px 6px rgba(0,0,0,0.05); margin-bottom:15px;">
+                    <!-- Nehir -->
+                    <div style="position:absolute; bottom:0; left:0; right:0; height:40%; background:linear-gradient(to right, #0284c7, #38bdf8); opacity:0.8;"></div>
+                    <!-- Sol Toprak -->
+                    <div style="position:absolute; bottom:0; left:0; width:25%; height:55%; background:#a3e635; border-right:4px solid #4d7c0f; border-radius:0 20px 0 0;"></div>
+                    <!-- Sağ Toprak -->
+                    <div style="position:absolute; bottom:0; right:0; width:25%; height:55%; background:#a3e635; border-left:4px solid #4d7c0f; border-radius:20px 0 0 0;"></div>
+                    
+                    <!-- Kırık Köprü Sol -->
+                    <div style="position:absolute; bottom:40%; left:20%; width:15%; height:10px; background:#8b5a2b; border-radius:5px;"></div>
+                    <!-- Kırık Köprü Sağ -->
+                    <div style="position:absolute; bottom:40%; right:20%; width:15%; height:10px; background:#8b5a2b; border-radius:5px;"></div>
+                    
+                    <!-- Ortadaki Eksik Boşluk -->
+                    <div id="lb-plank" style="position:absolute; bottom:40%; left:35%; width:30%; height:10px; background:rgba(255,255,255,0.4); border:2px dashed #ffffff; border-radius:5px; transition:all 0.5s;"></div>
+
+                    <!-- Tavşan -->
+                    <div id="lb-rabbit" style="position:absolute; bottom:43%; left:10%; font-size:3rem; transition:all 1s cubic-bezier(0.25, 1, 0.5, 1); z-index:10;">🐰</div>
+                    <!-- Ödül (Havuç) -->
+                    <div id="lb-carrot" style="position:absolute; bottom:43%; right:8%; font-size:3rem; z-index:10;">🥕</div>
+                </div>
+
+                <div class="lb-options" style="display:flex; justify-content:center; gap:15px;">
+                    ${opts.map((opt, i) => `
+                        <button class="btn btn-primary lb-opt-btn" data-val="${opt}" style="font-size:1.5rem; padding:10px 20px; border-radius:12px; background:#f59e0b; border-color:#d97706; color:white; font-weight:bold; box-shadow:0 4px 6px rgba(0,0,0,0.1); flex:1; max-width:80px;">${opt}</button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        function updateLivesDisplay() {
+            const livesEl = container.querySelector("#lb-lives");
+            if (!livesEl) return;
+            livesEl.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement("i");
+                heart.style.width = "16px";
+                heart.style.height = "16px";
+                heart.setAttribute("data-lucide", "heart");
+                if (i < lives) {
+                    heart.style.fill = "#ef4444";
+                    heart.style.color = "#ef4444";
+                } else {
+                    heart.style.fill = "none";
+                    heart.style.color = "var(--text-muted)";
+                    heart.style.opacity = "0.3";
+                }
+                livesEl.appendChild(heart);
+            }
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        updateLivesDisplay();
+
+        container.querySelectorAll(".level-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                if (tab.hasAttribute("disabled")) return;
+                const next = parseInt(tab.dataset.level);
+                if (next === levelNumber) return;
+                playSound('click');
+                cleanUp();
+                startLogicBridgeGame(container, next);
+            });
+        });
+
+        // Oyunu başlat
+        countdownTimer = setInterval(() => {
+            if (!gameActive) return;
+            remainingTime--;
+            document.getElementById("lb-timer").innerText = remainingTime;
+            
+            if (remainingTime <= 0) {
+                lives = 0;
+                updateLivesDisplay();
+                endGame(false);
+            }
+        }, 1000);
+        
+        activeGameTimer = setInterval(() => {
+            if (!gameActive) return;
+            timeElapsed++;
+        }, 1000);
+
+        let processing = false;
+        container.querySelectorAll(".lb-opt-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                if (!gameActive || processing) return;
+                const val = btn.getAttribute("data-val");
+                
+                if (val === cfg.answer) {
+                    processing = true;
+                    gameActive = false; // Süreyi durdur
+                    playSound('success');
+                    
+                    // Köprüyü tamamla
+                    const plank = document.getElementById("lb-plank");
+                    plank.style.background = "#8b5a2b";
+                    plank.style.border = "none";
+                    plank.innerHTML = `<div style="text-align:center; color:white; font-size:1rem; line-height:10px; font-weight:bold;">${val}</div>`;
+                    
+                    // Tavşanı zıplat
+                    const rabbit = document.getElementById("lb-rabbit");
+                    setTimeout(() => {
+                        rabbit.style.left = "45%";
+                        rabbit.style.bottom = "50%"; // Havadayken
+                    }, 200);
+                    setTimeout(() => {
+                        rabbit.style.left = "75%";
+                        rabbit.style.bottom = "43%"; // Karşıya geçti
+                        document.getElementById("lb-carrot").style.opacity = "0"; // Havucu yedi
+                        rabbit.innerText = "🐰😋";
+                    }, 700);
+
+                    setTimeout(() => {
+                        endGame(true);
+                    }, 1500);
+
+                } else {
+                    playSound('locked');
+                    lives--;
+                    updateLivesDisplay();
+                    
+                    // Butonu kırmızı yap ve titret
+                    btn.style.background = "#ef4444";
+                    btn.style.borderColor = "#b91c1c";
+                    btn.style.animation = "shake 0.3s ease";
+                    setTimeout(() => { btn.style.animation = ""; }, 300);
+                    
+                    if (lives <= 0) {
+                        processing = true;
+                        // Tavşan düşme efekti
+                        const rabbit = document.getElementById("lb-rabbit");
+                        rabbit.innerText = "🐰💦";
+                        rabbit.style.left = "40%";
+                        rabbit.style.bottom = "10%";
+                        rabbit.style.transform = "rotate(180deg)";
+                        setTimeout(() => { endGame(false); }, 1000);
+                    }
+                }
+            });
+        });
+
+        function endGame(isWin) {
+            cleanUp();
+            
+            if (isWin) {
+                unlockNextLevel(12, levelNumber);
+                playSound('success');
+
+                const scoreBase = 80 * levelNumber;
+                const scoreAwarded = scoreBase + Math.max(0, remainingTime * 5);
+                const starsAwarded = remainingTime > (cfg.speed * 0.6) ? 25 : (remainingTime > (cfg.speed * 0.3) ? 15 : 10);
+
+                const ach = window.achievementsData;
+                ach.userStats.stars += starsAwarded;
+                ach.userStats.totalScore += scoreAwarded;
+                ach.userStats.completedGames += 1;
+
+                const done = ach.dailyTasks.filter(t => t.completed).length;
+                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🧠🌉</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:#D8BBFF; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Harika Zeka!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                                Örüntüyü <strong>${timeElapsed} saniyede</strong> çözdün!
+                            </p>
+                            
+                            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
+                                </div>
+                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
+                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
+                                    <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar</button>
+                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Svy ${levelNumber + 1}</button>` : ''}
+                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay").addEventListener("click", () => { playSound('click'); startLogicBridgeGame(container, levelNumber); });
+                    if (levelNumber < 10) {
+                        container.querySelector("#btn-next-level").addEventListener("click", () => { playSound('click'); startLogicBridgeGame(container, levelNumber + 1); });
+                    }
+                    container.querySelector("#btn-finish-win").addEventListener("click", () => { playSound('click'); closeModal(); renderAchievements(); });
+                }, 400);
+            } else {
+                lockGame(12);
+                playSound('locked');
+                setTimeout(() => {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:16px 8px;">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💦</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Canlar veya Süre Bitti!</h2>
+                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">Tavşan suya düştü. 1 global can kaybettin!</p>
+                            <div style="display:flex; gap:10px; justify-content:center;">
+                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
+                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
+                            </div>
+                        </div>
+                    `;
+
+                    container.querySelector("#btn-replay-fail").addEventListener("click", () => { playSound('click'); startLogicBridgeGame(container, levelNumber); });
+                    container.querySelector("#btn-close-fail").addEventListener("click", () => { playSound('click'); closeModal(); });
+                }, 400);
+            }
+        }
+    }
+
     // 14. Genel Modal Penceresi Kontrolü (Modal Utility Functions)
     function showModal(title, bodyHTML) {
+        if (window.currentGameCleanup) {
+            window.currentGameCleanup();
+            window.currentGameCleanup = null;
+        }
         modalTitle.innerText = title;
         modalBody.innerHTML = bodyHTML;
         modalOverlay.classList.add("active");
@@ -4166,6 +4976,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (activeGameTimer) {
             clearInterval(activeGameTimer);
             activeGameTimer = null;
+        }
+
+        if (window.currentGameCleanup) {
+            window.currentGameCleanup();
+            window.currentGameCleanup = null;
         }
 
         // 300ms sonra (transition bitince) modalı temizleme

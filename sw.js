@@ -1,4 +1,4 @@
-const CACHE_NAME = "zeka-diyari-v2";
+const CACHE_NAME = "zeka-diyari-v33";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS_TO_CACHE = [
   "./css/animations.css",
   "./js/gamesData.js",
   "./js/achievements.js",
+  "./js/newGames.js",
   "./js/app.js",
   "./js/pwa.js",
   "./manifest.json",
@@ -26,7 +27,13 @@ const ASSETS_TO_CACHE = [
   "./assets/images/golge_esleme.jpg",
   "./assets/images/dogru_mu_yanlis_mi.jpg",
   "./assets/images/sayi_avi.jpg",
-  "./assets/images/ritmik_hafiza.jpg"
+  "./assets/images/ritmik_hafiza.jpg",
+  "./assets/images/avatars/butterfly.jpg",
+  "./assets/images/avatars/giraffe.jpg",
+  "./assets/images/sayi_yapbozu.jpg",
+  "./assets/images/boyama_kitabi.jpg",
+  "./assets/images/yapboz_kulesi.jpg",
+  "./assets/images/noktalari_birlestir.jpg"
 ];
 
 // Install Event: Pre-cache static assets
