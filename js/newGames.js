@@ -2449,48 +2449,7 @@ window.startRhythmDanceGame = function(container, levelNumber) {
     let currentSpeed = 2.2;
     let currentSpawnRate = 1000;
 
-    function checkOrientation() {
-        const isMobilePhone = /Mobi|Android|iPhone/i.test(navigator.userAgent) && !/iPad|Macintosh/i.test(navigator.userAgent);
-        const isPortrait = window.innerHeight > window.innerWidth;
-        
-        let overlay = container.querySelector('#rhythm-rotate-overlay');
-        
-        if (isMobilePhone && isPortrait) {
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'rhythm-rotate-overlay';
-                overlay.style.position = 'absolute';
-                overlay.style.inset = '0';
-                overlay.style.background = '#0f172a';
-                overlay.style.color = '#fff';
-                overlay.style.display = 'flex';
-                overlay.style.flexDirection = 'column';
-                overlay.style.justifyContent = 'center';
-                overlay.style.alignItems = 'center';
-                overlay.style.zIndex = '500';
-                overlay.style.padding = '20px';
-                overlay.style.textAlign = 'center';
-                overlay.innerHTML = `
-                    <div style="font-size: 4rem; margin-bottom: 20px; animation: rotate-phone 2s infinite ease-in-out;">${'🔄'}📱</div>
-                    <h3 style="color: var(--pastel-yellow); margin-bottom: 10px;">Telefonu Yan Çevir!</h3>
-                    <p style="color: #cbd5e1; font-size: 0.95rem; max-width: 250px; line-height: 1.4;">Daha rahat oynamak için lütfen telefonunu yatay konuma getir.</p>
-                    <style>
-                        @keyframes rotate-phone {
-                            0% { transform: rotate(0deg); }
-                            50% { transform: rotate(-90deg); }
-                            100% { transform: rotate(0deg); }
-                        }
-                    </style>
-                `;
-                container.querySelector('.rhythm-dance-game').style.position = 'relative';
-                container.querySelector('.rhythm-dance-game').appendChild(overlay);
-            }
-        } else {
-            if (overlay) {
-                overlay.remove();
-            }
-        }
-    }
+    function checkOrientation() { /* Removed */ }
 
     function renderSongList() {
         const unlockedCount = getUnlockedSong();

@@ -1324,6 +1324,25 @@
     }
 }
 
+/* Evrensel Mobil Oyun Ölçeklendirmesi (Global Mobile Game Scaling) */
+@media (max-width: 480px) {
+    .modal-body > div {
+        zoom: 0.85;
+    }
+}
+
+@media (max-width: 400px) {
+    .modal-body > div {
+        zoom: 0.75;
+    }
+}
+
+@media (max-width: 350px) {
+    .modal-body > div {
+        zoom: 0.65;
+    }
+}
+
 /* Oyun Başlatma Modal İçeriği */
 .game-loader-modal {
     text-align: center;
