@@ -3428,9 +3428,9 @@ window.startBlockBlastGame = function(container, levelNumber) {
 
     function updatePreview(topLeftR, topLeftC) {
         clearBoardPreviews();
-        if (topLeftR === null || topLeftC === null) return;
+        if (topLeftR === null || topLeftC === null) return null;
         const piece = activePieces[window.bbDragState.pieceIdx];
-        if (!piece) return;
+        if (!piece) return null;
 
         const fits = checkFit(piece, topLeftR, topLeftC);
         const pr = piece.grid.length;
@@ -3448,6 +3448,7 @@ window.startBlockBlastGame = function(container, levelNumber) {
                 }
             }
         }
+        return fits;
     }
 
     function handlePointerMove(e) {
@@ -3461,9 +3462,8 @@ window.startBlockBlastGame = function(container, levelNumber) {
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
         if (clientX === undefined || clientY === undefined) return;
 
-        // Apply visual offset (e.g. 50px above finger)
         clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-        clone.style.top = (clientY - clone.offsetHeight - 20) + 'px'; // Float above finger!
+        clone.style.top = (clientY - clone.offsetHeight/2) + 'px';
 
         // Find cell under finger
         const els = document.elementsFromPoint(clientX, clientY);
@@ -3478,12 +3478,18 @@ window.startBlockBlastGame = function(container, levelNumber) {
             if (state.lastPreviewR !== topLeftR || state.lastPreviewC !== topLeftC) {
                 state.lastPreviewR = topLeftR;
                 state.lastPreviewC = topLeftC;
-                updatePreview(topLeftR, topLeftC);
+                const fits = updatePreview(topLeftR, topLeftC);
+                if (fits === true) {
+                    clone.style.filter = 'drop-shadow(0 0 15px rgba(74, 222, 128, 0.9))';
+                } else if (fits === false) {
+                    clone.style.filter = 'drop-shadow(0 0 15px rgba(248, 113, 113, 0.9))';
+                }
             }
         } else {
             state.lastPreviewR = null;
             state.lastPreviewC = null;
             clearBoardPreviews();
+            clone.style.filter = 'none';
         }
     }
 
@@ -3759,7 +3765,7 @@ window.startBlockBlastGame = function(container, levelNumber) {
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             if (clientX !== undefined) {
                 clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-                clone.style.top = (clientY - clone.offsetHeight - 20) + 'px';
+                clone.style.top = (clientY - clone.offsetHeight/2) + 'px';
             }
             
             slotEl.style.opacity = '0.2'; // fade original
