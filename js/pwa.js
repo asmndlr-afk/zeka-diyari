@@ -34,27 +34,44 @@ window.addEventListener("beforeinstallprompt", (e) => {
   }
 });
 
-// 3. Yükleme Butonuna Tıklama Olayı
+// 3. Yükleme Butonuna Tıklama Olayı ve iOS Desteği
 document.addEventListener("DOMContentLoaded", () => {
   const installBtn = document.getElementById("btn-install-app");
-  if (installBtn) {
-    installBtn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
+  if (!installBtn) return;
 
-      // Yükleme penceresini aç
-      deferredPrompt.prompt();
+  // iOS Tespiti
+  const isIos = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+  };
+  const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
 
-      // Kullanıcının cevabını bekle
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`[PWA] Kullanıcı yükleme tercihi: ${outcome}`);
-
-      // İstem nesnesini sıfırla (tek kullanımlıktır)
-      deferredPrompt = null;
-
-      // Butonu gizle
-      installBtn.style.display = "none";
+  // iOS cihaz ise ve uygulama olarak açılmadıysa butonu göster
+  if (isIos() && !isInStandaloneMode()) {
+    installBtn.style.display = "inline-flex";
+    if (window.lucide) window.lucide.createIcons();
+    
+    installBtn.addEventListener("click", () => {
+      alert("iPhone veya iPad'e yüklemek için:\n\n1. Ekranın altındaki 'Paylaş' (Kare içinden çıkan ok) simgesine dokunun.\n2. Menüyü aşağı kaydırıp 'Ana Ekrana Ekle' (Add to Home Screen) seçeneğine tıklayın.");
     });
+    return; // Normal PWA yükleme mantığına girme
   }
+
+  // Normal Android/Desktop PWA Yükleme Mantığı
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+
+    // Yükleme penceresini aç
+    deferredPrompt.prompt();
+
+    // Kullanıcının cevabını bekle
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[PWA] Kullanıcı yükleme tercihi: ${outcome}`);
+
+    // İstem nesnesini sıfırla
+    deferredPrompt = null;
+    installBtn.style.display = "none";
+  });
 });
 
 // 4. Uygulama Başarıyla Yüklendiğinde Tetiklenen Olay
