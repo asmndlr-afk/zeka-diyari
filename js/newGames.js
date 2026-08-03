@@ -3438,16 +3438,15 @@ window.startBlockBlastGame = function(container, levelNumber) {
                 state.lastPreviewR = topLeftR;
                 state.lastPreviewC = topLeftC;
                 const fits = updatePreview(topLeftR, topLeftC);
-                if (fits === true) {
-                    clone.style.filter = 'drop-shadow(0 0 15px rgba(74, 222, 128, 0.9))';
-                } else if (fits === false) {
-                    clone.style.filter = 'drop-shadow(0 0 15px rgba(248, 113, 113, 0.9))';
+                if (fits === true || fits === false) {
+                    clone.style.opacity = '0'; // Sadece ışık görünsün, blok gizlensin
                 }
             }
         } else {
             state.lastPreviewR = null;
             state.lastPreviewC = null;
             clearBoardPreviews();
+            clone.style.opacity = '1'; // Tahta dışındaysa bloğu tekrar göster
             clone.style.filter = 'none';
         }
     }
