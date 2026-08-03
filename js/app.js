@@ -321,6 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
         });
+        contentHTML += `
+                </div>
 
                 <!-- Save / Start Button -->
                 <button id="btn-save-profile" type="button" style="width: 100%; max-width: 320px; margin-top: 20px; padding: 14px; border-radius: 18px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f43f5e, #e11d48); border: none; color: white; box-shadow: 0 8px 20px rgba(244,63,94,0.45); cursor: pointer; transition: transform 0.15s ease;">
