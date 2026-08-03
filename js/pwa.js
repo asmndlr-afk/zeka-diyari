@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // 4. Uygulama Başarıyla Yüklendiğinde Tetiklenen Olay
 window.addEventListener("appinstalled", (evt) => {
-  console.log("[PWA] Zeka Diyarı başarıyla cihaza yüklendi!");
+  console.log("[PWA] MİNİKİO başarıyla cihaza yüklendi!");
   
   // Butonu gizle
   const installBtn = document.getElementById("btn-install-app");

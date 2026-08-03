@@ -5,23 +5,24 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3532425369618197"
      crossorigin="anonymous"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeka Diyarı | Çocuklar İçin Eğlenceli Zeka Oyunları</title>
-    <meta name="description" content="6-12 yaş grubu çocuklar için hafıza, mantık, dikkat ve refleks geliştiren, modern ve eğlenceli zeka oyunları platformu.">
-    <meta name="author" content="Zeka Diyarı Geliştirici Ekibi">
+    <title>MİNİKİO | Eğlenceli Zeka Oyunları</title>
+    <meta name="description" content="Hafıza, mantık, dikkat ve refleks geliştiren, modern ve eğlenceli zeka oyunları platformu.">
+    <meta name="author" content="MİNİKİO Geliştirici Ekibi">
     
-    <!-- CSS Stil Dosyaları -->
+    <!-- Cache Reset Script -->
     <script>
-        // Zorla Cache Temizleme (PWA güncelleme sorunu için)
-        if (localStorage.getItem('cache_cleared_v4') !== 'true') {
+        if (localStorage.getItem('cache_cleared_v111') !== 'true') {
             if ('caches' in window) {
                 caches.keys().then(names => {
                     for (let name of names) caches.delete(name);
                 });
             }
-            localStorage.setItem('cache_cleared_v4', 'true');
+            localStorage.setItem('cache_cleared_v111', 'true');
             window.location.reload(true);
         }
     </script>
+    
+    <!-- CSS Stil Dosyaları -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/animations.css">
@@ -32,7 +33,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Zeka Diyarı">
+    <meta name="apple-mobile-web-app-title" content="MİNİKİO">
     <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 </head>
 <body data-theme="light">
@@ -78,28 +79,12 @@
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
             <div class="splash-mascot-container">
-                <!-- Sevimli Beyin Sihirbazı Maskotu -->
-                <svg viewBox="0 0 200 200" class="splash-mascot">
-                    <!-- Beyin Şekli -->
-                    <path d="M70,80 C50,80 35,95 35,115 C35,135 55,150 75,150 C80,150 85,145 90,140 C95,145 100,150 105,150 C125,150 145,135 145,115 C145,95 130,80 110,80 C105,80 100,85 95,90 C90,85 85,80 70,80 Z" fill="#FFC6FF" stroke="#1F2937" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-                    <!-- Gözler -->
-                    <circle cx="72" cy="115" r="8" fill="#1F2937" />
-                    <circle cx="72" cy="112" r="3" fill="#FFFFFF" />
-                    <circle cx="108" cy="115" r="8" fill="#1F2937" />
-                    <circle cx="108" cy="112" r="3" fill="#FFFFFF" />
-                    <!-- Yanaklar (Allık) -->
-                    <circle cx="58" cy="125" r="6" fill="#FFADAD" opacity="0.8" />
-                    <circle cx="122" cy="125" r="6" fill="#FFADAD" opacity="0.8" />
-                    <!-- Gülümseme -->
-                    <path d="M83,124 Q90,131 97,124" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round" />
-                    <!-- Şapka -->
-                    <polygon points="90,45 130,60 90,75 50,60" fill="#4F46E5" stroke="#1F2937" stroke-width="5" stroke-linejoin="round" />
-                    <rect x="85" y="60" width="10" height="25" fill="#4F46E5" stroke="#1F2937" stroke-width="5" />
-                    <path d="M130,60 L140,80" stroke="#FDFFB6" stroke-width="3.5" stroke-linecap="round" />
-                    <circle cx="140" cy="80" r="5" fill="#FDFFB6" />
-                </svg>
+                <!-- Sevimli 3D Pixar MİNİKİO Logosu -->
+                <img src="assets/images/logo.jpg" alt="MİNİKİO Logo" class="splash-mascot-img" style="width: 170px; height: 170px; border-radius: 50%; object-fit: cover; box-shadow: 0 12px 35px rgba(99, 102, 241, 0.55); border: 4px solid #ffffff; animation: float 3s infinite ease-in-out;">
             </div>
-            <h1 class="splash-title">Zeka Diyarı</h1>
+            <h1 class="splash-title colorful-title" style="font-size: 3.2rem; font-weight: 900; font-family: var(--font-heading); margin-top: 15px; display:flex; align-items:center; justify-content:center; letter-spacing:0.5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));">
+                <span style="color:#f97316;">M</span><span style="color:#eab308;">İ</span><span style="color:#06b6d4;">N</span><span style="color:#ec4899;">İ</span><span style="color:#ef4444;">K</span><span style="color:#10b981;">İ</span><span style="color:#3b82f6;">O</span>
+            </h1>
             <p class="splash-subtitle">Eğlenceli zeka oyunları ve macera dolu görevler seni bekliyor!</p>
             <button id="btn-start" class="btn btn-start">Oynamaya Başla</button>
         </div>
@@ -110,21 +95,17 @@
        ========================================================================== -->
     <header class="navbar glass">
         <!-- Sol Logo ve Platform İsmi -->
-        <a href="#" class="nav-brand">
-            <svg class="nav-logo-svg" viewBox="0 0 100 100">
-                <!-- Sevimli Logo -->
-                <circle cx="50" cy="50" r="45" fill="#FDFFB6" stroke="#1F2937" stroke-width="4" />
-                <path d="M35,45 C35,35 45,35 50,42 C55,35 65,35 65,45 C65,58 50,68 50,68 C50,68 35,58 35,45 Z" fill="#FFADAD" stroke="#1F2937" stroke-width="3" />
-                <circle cx="43" cy="45" r="3" fill="#1F2937" />
-                <circle cx="57" cy="45" r="3" fill="#1F2937" />
-            </svg>
-            <span class="nav-title">Zeka Diyarı</span>
+        <a href="#" class="nav-brand" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+            <img src="assets/images/logo.jpg" alt="MİNİKİO Logo" class="nav-logo-img" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45); border: 2.5px solid #ffffff; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <span class="nav-title colorful-title" style="font-size: 1.7rem; font-weight: 900; font-family: var(--font-heading); display:flex; align-items:center; letter-spacing:0.5px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.12));">
+                <span style="color:#f97316;">M</span><span style="color:#eab308;">İ</span><span style="color:#06b6d4;">N</span><span style="color:#ec4899;">İ</span><span style="color:#ef4444;">K</span><span style="color:#10b981;">İ</span><span style="color:#3b82f6;">O</span>
+            </span>
         </a>
 
         <!-- Orta Arama Çubuğu -->
         <div class="nav-search">
             <i data-lucide="search" class="nav-search-icon"></i>
-            <input type="text" id="search-input" class="nav-search-input" placeholder="Oyun ara, beceri seç veya yaş yaz...">
+            <input type="text" id="search-input" class="nav-search-input" placeholder="Oyun veya beceri ara...">
         </div>
 
         <!-- Sağ İkonlar ve Profil -->
@@ -150,10 +131,13 @@
             </button>
 
 
-            <!-- Profil Avatarı -->
-            <button class="nav-avatar-btn" title="Benim Sayfam">
-                <img src="assets/images/kids_avatar.jpg" alt="Çocuk Profil">
-            </button>
+            <!-- Profil Avatarı ve İsim -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="nav-player-name" style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">Oyuncu</span>
+                <button class="nav-avatar-btn" title="Benim Sayfam (Profil Düzenle)">
+                    <img src="assets/images/kids_avatar.jpg" alt="Çocuk Profil">
+                </button>
+            </div>
         </div>
     </header>
 
@@ -165,13 +149,33 @@
             <span class="hero-tag">🌟 EĞLENCE & BİLİM YAN YANA</span>
             <h1 class="hero-title">Bugün Hangi Oyunu Oynamak İstersin?</h1>
             <p class="hero-desc">
-                Zeka Diyarı'ndaki birbirinden sevimli karakterlerle tanış, hafızanı geliştir, mantık bulmacalarını çöz ve günlük yıldızları toplayarak başarı rozetlerini kazan!
+                MİNİKİO'daki birbirinden sevimli karakterlerle tanış, hafızanı geliştir, mantık bulmacalarını çöz ve günlük yıldızları toplayarak başarı rozetlerini kazan!
             </p>
             <button id="btn-hero-action" class="btn btn-primary btn-start">
                 <i data-lucide="compass"></i> Maceraya Başla
             </button>
         </div>
-        <div class="hero-illustration">
+            <!-- Ana Ekran Kutlamalı Günün Birincisi Ekranı (Roket & Gökkuşağı Üstünde) 🏆 -->
+            <div id="hero-champion-banner">
+                <div class="champ-badge-pill">
+                    👑 GÜNÜN BİRİNCİSİ 👑
+                </div>
+                <div class="champ-info-row">
+                    <div class="champ-avatar-wrapper">
+                        <img id="champion-avatar-img" src="assets/images/avatars/lion.png" alt="Günün Birincisi Profil">
+                        <div class="champ-crown-icon">👑</div>
+                    </div>
+                    <div class="champ-text-group">
+                        <div id="champion-name" class="champ-3d-name-title">
+                            Şampiyon Adayı 🏆
+                        </div>
+                        <div id="champion-score" class="champ-record-badge">
+                            <span id="champion-score-val">Oyun Oyna ve 1. Sıraya Yerleş! 🚀</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Kahraman Alanı SVG İllüstrasyonu -->
             <svg viewBox="0 0 500 400" class="hero-illust-svg">
                 <!-- Gökkuşağı -->
@@ -235,7 +239,7 @@
         <!-- ==========================================================================
            GÜNLÜK BAŞARILAR VE İLERLEME ALANI (ACHIEVEMENTS PANEL)
            ========================================================================== -->
-        <section id="achievements-section" class="achievements-section">
+        <section id="achievements-section" class="achievements-section" style="display: none;">
             <div class="section-header">
                 <h2 class="section-title">Başarılarım ve İlerlemem</h2>
             </div>
@@ -341,7 +345,7 @@
                 <div class="promo-card glass" style="border-left: 6px solid var(--pastel-pink);">
                     <span class="promo-card-tag">YAKINDA</span>
                     <h3 class="promo-card-title">Yeni Eklenenler</h3>
-                    <p class="promo-card-content">Önümüzdeki hafta "Matematik Dehası" ve "Kelime Avcısı" oyunları platformumuza eklenecek!</p>
+                    <p class="promo-card-content">Zihnini daha da zorlayacak yepyeni ve esrarengiz oyunlar çok yakında platformumuza eklenecek. Takipte kal!</p>
                     <div class="promo-card-footer">
                         <span class="skill-tag">Matematik & Kelime</span>
                         <span style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">🚀</span>
@@ -377,15 +381,14 @@
         <div class="footer-grid">
             <!-- Kurum/Platform Bilgisi -->
             <div class="footer-info">
-                <div class="footer-brand">
-                    <svg class="footer-logo" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="#CAFFBF" stroke="#1F2937" stroke-width="4" />
-                        <path d="M35,50 Q50,30 65,50 C65,65 50,75 50,75 C50,75 35,65 35,50 Z" fill="#FDFFB6" stroke="#1F2937" stroke-width="3" />
-                    </svg>
-                    <span class="footer-title">Zeka Diyarı</span>
+                <div class="footer-brand" style="display:flex; align-items:center; gap:12px;">
+                    <img src="assets/images/logo.jpg" alt="MİNİKİO Logo" class="footer-logo-img" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45); border: 2.5px solid #ffffff;">
+                    <span class="footer-title colorful-title" style="font-size: 1.7rem; font-weight: 900; font-family: var(--font-heading); display:flex; align-items:center; letter-spacing:0.5px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.12));">
+                        <span style="color:#f97316;">M</span><span style="color:#eab308;">İ</span><span style="color:#06b6d4;">N</span><span style="color:#ec4899;">İ</span><span style="color:#ef4444;">K</span><span style="color:#10b981;">İ</span><span style="color:#3b82f6;">O</span>
+                    </span>
                 </div>
                 <p class="footer-desc">
-                    Zeka Diyarı, 6-12 yaş grubu çocukların bilişsel gelişimlerini destekleyen eğlenceli, güvenli ve çocuk dostu bir zeka oyunları portalıdır.
+                    MİNİKİO, zihinsel gelişimi destekleyen eğlenceli, güvenli ve kullanıcı dostu bir zeka oyunları portalıdır.
                 </p>
             </div>
 
@@ -393,10 +396,10 @@
             <div>
                 <h3 class="footer-links-title">Kategoriler</h3>
                 <ul class="footer-links-list">
-                    <li><a href="#categories-section" class="footer-link">Hafıza Oyunları</a></li>
-                    <li><a href="#categories-section" class="footer-link">Mantık Oyunları</a></li>
-                    <li><a href="#categories-section" class="footer-link">Matematik Oyunları</a></li>
-                    <li><a href="#categories-section" class="footer-link">Refleks Oyunları</a></li>
+                    <li><a href="#games-section" class="footer-link category-link" data-category="Hafıza Oyunları">Hafıza Oyunları</a></li>
+                    <li><a href="#games-section" class="footer-link category-link" data-category="Mantık Oyunları">Mantık Oyunları</a></li>
+                    <li><a href="#games-section" class="footer-link category-link" data-category="Matematik Oyunları">Matematik Oyunları</a></li>
+                    <li><a href="#games-section" class="footer-link category-link" data-category="Refleks Oyunları">Refleks Oyunları</a></li>
                 </ul>
             </div>
 
@@ -404,27 +407,49 @@
             <div>
                 <h3 class="footer-links-title">Destek & Bilgi</h3>
                 <ul class="footer-links-list">
-                    <li><a href="#" class="footer-link">Sıkça Sorulan Sorular</a></li>
-                    <li><a href="#" class="footer-link">Kullanım Şartları</a></li>
-                    <li><a href="#" class="footer-link">Gizlilik Politikası</a></li>
-                    <li><a href="#" class="footer-link">İletişim</a></li>
+                    <li>
+                        <a href="#" class="footer-link" onclick="event.preventDefault(); const content = document.getElementById('inline-sss-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">Sıkça Sorulan Sorular</a>
+                        <div id="inline-sss-content" style="display: none; padding: 12px; margin-top: 8px; background: rgba(255,255,255,0.6); border-radius: 12px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <strong>1. Oyunlar ücretli mi?</strong><br>
+                            Hayır, MİNİKİO'daki tüm oyunlar tamamen ücretsizdir.<br><br>
+                            <strong>2. Nasıl yıldız kazanırım?</strong><br>
+                            Oyunları ve günlük görevleri tamamlayarak.<br><br>
+                            <strong>3. İlerlemem nasıl kaydedilir?</strong><br>
+                            Tüm ilerlemeniz otomatik olarak güvenle kaydedilir.
+                        </div>
+                    </li>
+                    <li>
+                        <a href="#" class="footer-link" onclick="event.preventDefault(); const content = document.getElementById('inline-terms-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">Kullanım Şartları</a>
+                        <div id="inline-terms-content" style="display: none; padding: 12px; margin-top: 8px; background: rgba(255,255,255,0.6); border-radius: 12px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <strong>1. Güvenli Eğlence:</strong> MİNİKİO, çocukların güvenle oynayıp öğrenebileceği bir platformdur.<br><br>
+                            <strong>2. Tamamen Ücretsiz:</strong> Tüm oyunlar ücretsizdir, gizli satın almalar yoktur.<br><br>
+                            <strong>3. Veri Gizliliği:</strong> Hiçbir kişisel veri toplanmaz; tüm kayıtlar (puan, yıldız) sadece cihazınızda durur.<br><br>
+                            <strong>4. Telif Hakları:</strong> Sitedeki tatlı 3D karakterler ve oyun tasarımları bize aittir.
+                        </div>
+                    </li>
+                    <li>
+                        <a href="#" class="footer-link" onclick="event.preventDefault(); const content = document.getElementById('inline-privacy-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">Gizlilik Politikası</a>
+                        <div id="inline-privacy-content" style="display: none; padding: 12px; margin-top: 8px; background: rgba(255,255,255,0.6); border-radius: 12px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <strong>1. Veri Toplamıyoruz:</strong> MİNİKİO'da hesap açmanıza veya e-posta girmenize gerek yoktur. Hiçbir kişisel bilginiz sunucularımızda toplanmaz.<br><br>
+                            <strong>2. Yerel Kayıt:</strong> Oyun ilerlemeniz, yıldızlarınız ve profiliniz sadece sizin cihazınızda (tarayıcınızda) güvende tutulur.<br><br>
+                            <strong>3. Reklam ve Çerezler:</strong> Platformun ücretsiz kalması için çocuklara uygun güvenli reklamlar gösterilebilir. Reklam ortaklarımız oyunu sunmak için temel çerezler kullanabilir.
+                        </div>
+                    </li>
+                    <li>
+                        <a href="#" class="footer-link" onclick="event.preventDefault(); const content = document.getElementById('inline-contact-content'); content.style.display = content.style.display === 'none' ? 'block' : 'none';">İletişim</a>
+                        <div id="inline-contact-content" style="display: none; padding: 12px; margin-top: 8px; background: rgba(255,255,255,0.6); border-radius: 12px; font-size: 0.95rem; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; font-weight: bold;">
+                            <a href="mailto:goktehuzurvaar@gmail.com" style="color: #6366f1; text-decoration: none;">goktehuzurvaar@gmail.com</a>
+                        </div>
+                    </li>
                 </ul>
             </div>
 
-            <!-- Ebeveyn Bilgilendirme -->
-            <div class="parent-info-card">
-                <h3 class="parent-info-title">
-                    <i data-lucide="shield-check" style="color: var(--pastel-green); width: 18px; height: 18px;"></i> Ebeveyn Notu
-                </h3>
-                <p class="parent-info-text">
-                    Platformumuz tamamen reklamsız ve çocuk güvenliğine uygun olarak tasarlanmıştır. Oyunlarımız çocukların hafıza, mantıksal düşünme ve odaklanma becerilerini eğlenerek pekiştirmelerine yardımcı olur.
-                </p>
-            </div>
+
         </div>
 
         <!-- Alt Telif Hakkı ve Sosyal Medya -->
         <div class="footer-bottom">
-            <p class="copyright">&copy; 2026 Zeka Diyarı. Tüm hakları saklıdır. Sevgiyle tasarlandı.</p>
+            <p class="copyright">&copy; 2026 MİNİKİO. Tüm hakları saklıdır. Sevgiyle tasarlandı.</p>
             <div class="social-icons">
                 <a href="#" class="btn-icon" aria-label="Facebook"><i data-lucide="facebook"></i></a>
                 <a href="#" class="btn-icon" aria-label="Twitter"><i data-lucide="twitter"></i></a>
@@ -436,12 +461,17 @@
 
     <!-- Lucide İkon Kütüphanesi CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Three.js 3D Oyun Motoru CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <!-- Platform Veri ve Kontrol Dosyaları -->
-    <script src="js/gamesData.js"></script>
-    <script src="js/achievements.js"></script>
-    <script src="js/newGames.js?v=1784977481192"></script>
-    <script src="js/app.js?v=4"></script>
-    <script src="js/pwa.js"></script>
+    <script src="js/gamesData.js?v=75"></script>
+    <script src="js/achievements.js?v=75"></script>
+    <script src="js/newGames.js?v=75"></script>
+    <script src="js/pixarAnimals.js?v=75"></script>
+    <script src="js/latestGames.js?v=75"></script>
+    <script src="js/app.js?v=75"></script>
+    <script src="js/pwa.js?v=75"></script>
 </body>
 </html>

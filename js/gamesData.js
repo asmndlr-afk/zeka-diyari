@@ -125,18 +125,18 @@ gamesList.push({
     locked: false
 });
 
-// 6. Oyun: Labirent Macerası
+// 6. Oyun: Tavşan Havuç Avcısı
 gamesList.push({
     id: 6,
-    name: "Labirent Macerası",
-    category: "Mantık Oyunları",
-    categoryClass: "mantik",
+    name: "Tavşan Havuç Avcısı",
+    category: "Refleks & Mantık",
+    categoryClass: "refleks",
     color: "#D8BBFF",
-    icon: "puzzle",
+    icon: "sparkles",
     age: "6-12 yaş",
     difficulty: "Orta",
-    skills: ["Akıl Yürütme", "Problem Çözme", "Planlama"],
-    desc: "Sevimli tavşanı yön tuşlarıyla labirentin sonundaki lezzetli havuca ulaştır!",
+    skills: ["Hızlı Karar Verme", "Refleks", "Odaklanma"],
+    desc: "Tarladaki tüm lezzetli havuçları ve süper yıldız havuçları topla, hayvanlara yakalanmadan bölümleri geç!",
     image: "assets/images/labirent_macerasi.jpg",
     locked: false
 });
@@ -317,43 +317,215 @@ gamesList.push({
     locked: false
 });
 
-// 18 - 100. Oyunlar (Çok Yakında / Kilitli)
-const categoriesKeys = Object.keys(categoriesConfig);
-const ages = ["6-8 yaş", "8-10 yaş", "10-12 yaş", "6-12 yaş"];
-const difficulties = ["Kolay", "Orta", "Zor"];
+// 18. Oyun: Kodlama Robotu
+gamesList.push({
+    id: 18,
+    name: "Kodlama Robotu",
+    category: "Problem Çözme",
+    categoryClass: "problem",
+    color: "#FFADAD",
+    icon: "key",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Algoritmik Düşünme", "Problem Çözme", "Planlama"],
+    desc: "Sevimli robotu yön komutlarıyla hedefe ulaştır, kodlama mantığını eğlenerek öğren!",
+    image: "assets/images/kodlama_robotu.jpg",
+    locked: false
+});
 
-for (let i = 18; i <= 100; i++) {
-    const category = categoriesKeys[i % categoriesKeys.length];
-    const categoryInfo = categoriesConfig[category];
-    const titleBase = gameTitles[(i - 5) % gameTitles.length];
-    const title = `${titleBase} #${Math.ceil(i / gameTitles.length)}`;
-    const age = ages[i % ages.length];
-    const difficulty = difficulties[i % difficulties.length];
-    
-    // Rastgele 2-3 beceri seçme
-    const skillsSrc = skillsPool[category];
-    const skills = [skillsSrc[i % skillsSrc.length], skillsSrc[(i + 2) % skillsSrc.length]];
-    
-    const desc = descsPool[i % descsPool.length];
-    
-    // placeholder SVG'ler veya gradyan renkleri kapak görseli olarak kullanacağız
-    const image = `gradient-${i % 8}`; 
+// 19. Oyun: Simetri Aynası
+gamesList.push({
+    id: 19,
+    name: "Simetri Aynası",
+    category: "Görsel Algı",
+    categoryClass: "gorsel",
+    color: "#CAFFBF",
+    icon: "eye",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Şekil Zemin Ayrımı", "Uzamsal İlişkiler", "Görsel Bütünleme"],
+    desc: "Dikey simetri çizgisine göre sol taraftaki çizimin ayna yansımasını sağ tarafa çizerek şekli tamamla!",
+    image: "assets/images/sekil_esleme.jpg",
+    locked: false
+});
 
-    gamesList.push({
-        id: i,
-        name: title,
-        category: category,
-        categoryClass: categoryInfo.class,
-        color: categoryInfo.color,
-        icon: categoryInfo.icon,
-        age: age,
-        difficulty: difficulty,
-        skills: skills,
-        desc: desc,
-        image: image,
-        locked: true
-    });
-}
+// 20. Oyun: Ritim ve Dans
+gamesList.push({
+    id: 20,
+    name: "Ritim ve Dans",
+    category: "Refleks Oyunları",
+    categoryClass: "refleks",
+    color: "#FFC6FF",
+    icon: "zap",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["El-Göz Koordinasyonu", "Ritim Algısı", "Yaratıcılık"],
+    desc: "Müzikal ızgarayı doldurarak kendi ritmini yarat, sevimli hayvanların senin melodinle dans etmesini izle!",
+    image: "assets/images/ritim_ve_dans.jpg",
+    locked: false
+});
+
+// 21. Oyun: Pofuduk Blok Eşleme (Block Blast)
+gamesList.push({
+    id: 21,
+    name: "Pofuduk Blok Eşleme",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#D8BBFF",
+    icon: "puzzle",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Strateji Geliştirme", "Planlama", "Görsel Algı"],
+    desc: "Sevimli pofuduk blokları 8x8 alana yerleştir, satır ve sütunları doldurarak tatlı blokları patlat!",
+    image: "assets/images/blok_blast.jpg",
+    locked: false
+});
+
+// 22. Oyun: Hedef Vurma (Okçuluk)
+gamesList.push({
+    id: 22,
+    name: "Hedef Vurma",
+    category: "Refleks Oyunları",
+    categoryClass: "refleks",
+    color: "#FFC6FF",
+    icon: "target",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["El-Göz Koordinasyonu", "Odaklanma", "Fizik Hissiyatı"],
+    desc: "Yayı ger, açıyı ayarla ve hareket eden hedef tahtasının tam ortasını (Tam İsabet!) vurmak için oku fırlat!",
+    image: "assets/images/hedef_vurma.jpg",
+    locked: false
+});
+
+// 23. Oyun: Galaktik Kristal Şekerler (Cosmic Match-3)
+gamesList.push({
+    id: 23,
+    name: "Galaktik Kristal Şekerler",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#D8BBFF",
+    icon: "star",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Strateji Geliştirme", "Görsel Algı", "Planlama"],
+    desc: "Renkli galaktik kristal şekerleri 3'lü eşleştir, süper lazer kombolarını patlat ve hedef skora ulaş!",
+    image: "assets/images/galaktik_sekerler.jpg",
+    locked: false
+});
+
+// 24. Oyun: Işık & Ayna Lazer Yansıtma
+gamesList.push({
+    id: 24,
+    name: "Işık & Ayna Yansıtma",
+    category: "Görsel Algı",
+    categoryClass: "gorsel",
+    color: "#CAFFBF",
+    icon: "sun",
+    age: "7-12 yaş",
+    difficulty: "Orta",
+    skills: ["Görsel Bütünleme", "Akıl Yürütme", "Uzamsal İlişkiler"],
+    desc: "Aynaları tıklayarak yönlendir, lazer ışığını kırarak hedef kristali aydınlat ve bulmacayı çöz!",
+    image: "assets/images/lazer_ayna.jpg",
+    locked: false
+});
+
+// 25. Oyun: Bahçe & Çiftlik Sulama (Hay Day Mantığı)
+gamesList.push({
+    id: 25,
+    name: "Bahçe & Çiftlik Sulama",
+    category: "Mantık Oyunları",
+    categoryClass: "mantik",
+    color: "#86EFAC",
+    icon: "sprout",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Planlama", "Zaman Yönetimi", "Kaynak Kullanımı"],
+    desc: "Tarlana dilediğin tohumu ek, sula, lezzetli ürünleri yetiştir ve biçerek çiftliğini büyüt!",
+    image: "assets/images/bahce_sulama.jpg",
+    locked: false
+});
+
+// 26. Oyun: Satranç & Akıl Hamleleri (2 Kişilik & Bilgisayar AI)
+gamesList.push({
+    id: 26,
+    name: "Satranç & Akıl Hamleleri",
+    category: "Problem Çözme",
+    categoryClass: "problem",
+    color: "#93C5FD",
+    icon: "chess",
+    age: "7-12 yaş",
+    difficulty: "Orta / Zor",
+    skills: ["Stratejik Düşünme", "Öngörü", "Planlama"],
+    desc: "Klasik satranç oyunu! İster bir arkadaşınla 2 kişilik oyna, ister akıllı bilgisayara karşı hamlelerini yarıştır!",
+    image: "assets/images/satranc.jpg",
+    locked: false
+});
+
+// 27. Oyun: UNO Renkli Kartlar (Strateji & Eğlence)
+gamesList.push({
+    id: 27,
+    name: "UNO Renkli Kartlar",
+    category: "Problem Çözme",
+    categoryClass: "problem",
+    color: "#F87171",
+    icon: "cards",
+    age: "6-12 yaş",
+    difficulty: "Kolay / Orta",
+    skills: ["Strateji", "Hızlı Karar Verme", "Renk & Sayı Eşleme"],
+    desc: "Klasik UNO kart oyunu! Renge veya sayıya göre kartları eşleştir, Pas, +2 ve Joker kartlarını kullanıp elini ilk sen bitir!",
+    image: "assets/images/uno_kartlar.jpg",
+    locked: false
+});
+
+// 28. Oyun: Renkli Yapboz
+gamesList.push({
+    id: 28,
+    name: "Renkli Yapboz",
+    category: "Görsel Zeka",
+    categoryClass: "gorsel",
+    color: "#F59E0B",
+    icon: "puzzle",
+    age: "5-12 yaş",
+    difficulty: "Kolay -> Zor (10 Level)",
+    skills: ["Görsel Algı", "Parça-Bütün İlişkisi", "Odaklanma"],
+    desc: "10 farklı seviyeden oluşan harika yapboz! İlk seviyede 4 basit parçayı birleştir, 36 parçalı usta seviyelerine kadar ilerle!",
+    image: "assets/images/puzzle_yapboz.jpg",
+    locked: false
+});
+
+
+
+// 29. Oyun: Kızma Birader (4 Kişilik Ludo)
+gamesList.push({
+    id: 29,
+    name: "Kızma Birader (Ludo)",
+    category: "Problem Çözme",
+    categoryClass: "problem",
+    color: "#F87171",
+    icon: "users",
+    age: "6-12 yaş",
+    difficulty: "Orta",
+    skills: ["Strateji", "Problem Çözme", "Planlama", "Şans"],
+    desc: "3D Pixar tarzı görsellerle hazırlanmış harika bir Ludo macerası! Arkadaşlarınla veya bilgisayara karşı 4 kişilik strateji savaşına katıl.",
+    image: "assets/images/kizma_birader.jpg",
+    locked: false
+});
+
+// 30. Oyun: Dokuz Taş (Nine Men's Morris)
+gamesList.push({
+    id: 30,
+    name: "Dokuz Taş (Nine Men's Morris)",
+    category: "Matematik Oyunları",
+    categoryClass: "matematik",
+    color: "#FDFFB6",
+    icon: "calculator",
+    age: "7-12 yaş",
+    difficulty: "Zor",
+    skills: ["Matematik Becerisi", "İleri Görüşlülük", "Mantık", "Sabır"],
+    desc: "Zeka ve strateji klasiği! Taşlarını diz, kaydır, üçlüleri oluştur (cız yap) ve rakibinden önce 10 puana ulaş!",
+    image: "assets/images/dokuz_tas.jpg",
+    locked: false
+});
 
 // Global olarak erişilebilir kılalım
 window.gamesData = gamesList;

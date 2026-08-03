@@ -10,6 +10,33 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     window.updateAvatarUI(savedAvatar);
 
+    // Global İstatistik Güncelleyici (new games support)
+    window.updateStats = function(score, completedCount) {
+        const ach = window.achievementsData;
+        if (!ach) return;
+        if (score) ach.userStats.totalScore += score;
+        if (completedCount) ach.userStats.completedGames += completedCount;
+        
+        const starsAwarded = score ? Math.max(5, Math.min(25, Math.ceil(score / 10))) : 10;
+        ach.userStats.stars += starsAwarded;
+        
+        const task1 = ach.dailyTasks.find(t => t.id === 1);
+        if (task1 && !task1.completed) {
+            task1.completed = true;
+            ach.userStats.stars += task1.reward;
+        }
+        
+        const done = ach.dailyTasks.filter(t => t.completed).length;
+        ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
+        
+        renderAchievements();
+    };
+
     // 1. Durum Yönetimi (State Management)
     let isSoundEnabled = true;
     let activeCategory = null;
@@ -19,14 +46,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Global Can (Hearts) Durumu
     // Oyun Bazlı Can (Hearts) Durumu
     function getGameHeartsState(gameId) {
-        const allStates = JSON.parse(localStorage.getItem("zeka_diyari_game_hearts") || "{}");
+        const allStates = JSON.parse(localStorage.getItem("minikio_game_hearts") || "{}");
         return allStates[gameId] || { lockedUntil: 0 };
     }
 
     function saveGameHeartsState(gameId, state) {
-        const allStates = JSON.parse(localStorage.getItem("zeka_diyari_game_hearts") || "{}");
+        const allStates = JSON.parse(localStorage.getItem("minikio_game_hearts") || "{}");
         allStates[gameId] = state;
-        localStorage.setItem("zeka_diyari_game_hearts", JSON.stringify(allStates));
+        localStorage.setItem("minikio_game_hearts", JSON.stringify(allStates));
     }
 
     function lockGame(gameId) {
@@ -35,15 +62,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function isLevelUnlocked(gameId, level) {
         if (level === 1) return true;
-        const maxUnlocked = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_unlocked_v3`) || "1");
+        const maxUnlocked = parseInt(localStorage.getItem(`minikio_game_${gameId}_unlocked_v3`) || "1");
         return level <= maxUnlocked;
     }
 
     function unlockNextLevel(gameId, currentLevel) {
         const nextLevel = currentLevel + 1;
-        const currentMax = parseInt(localStorage.getItem(`zeka_diyari_game_${gameId}_unlocked_v3`) || "1");
+        const currentMax = parseInt(localStorage.getItem(`minikio_game_${gameId}_unlocked_v3`) || "1");
         if (nextLevel > currentMax) {
-            localStorage.setItem(`zeka_diyari_game_${gameId}_unlocked_v3`, nextLevel);
+            localStorage.setItem(`minikio_game_${gameId}_unlocked_v3`, nextLevel);
         }
     }
 
@@ -76,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCloseModal = document.getElementById("btn-close-modal");
     
     const btnHeroAction = document.getElementById("btn-hero-action");
-
+    const promoSection = document.querySelector(".promo-section");
     // 3. Web Audio API Ses Sentezleyici (Dynamic Sound Engine)
     function initAudio() {
         if (!audioCtx) {
@@ -133,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Audio play blocked/failed: ", e);
         }
     }
+    window.playSound = playSound;
 
     // 4. Parçacık Animasyon Sistemi (Micro Particle System)
     function createBackgroundParticles() {
@@ -162,15 +190,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 5. Karşılama Ekranı Kapatma (Exit Splash Screen)
-    btnStart.addEventListener("click", () => {
+    function closeSplashScreen() {
+        if (!splashScreen || splashScreen.style.display === "none") return;
         initAudio();
         playSound('success');
         splashScreen.classList.add("fade-out");
         
-        // Splash bittikten sonra DOM'dan gizleyelim
         setTimeout(() => {
             splashScreen.style.display = "none";
-        }, 800);
+        }, 600);
+    }
+
+    if (btnStart) btnStart.addEventListener("click", closeSplashScreen);
+    if (splashScreen) splashScreen.addEventListener("click", closeSplashScreen);
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") closeSplashScreen();
     });
 
     // 6. Tema Seçici (Theme Toggle)
@@ -218,141 +252,479 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => lucide.createIcons(), 100);
     });
 
-    // 8.5 Profil Avatarı Özelleştirme (Avatar Customization)
+    // 8.5 Profil İsim & Avatar Özelleştirme (Player Profile System)
     const navAvatarBtn = document.querySelector(".nav-avatar-btn");
     if (navAvatarBtn) {
         navAvatarBtn.addEventListener("click", () => {
             playSound('click');
-            openAvatarSelectionModal();
+            openAvatarSelectionModal(false);
         });
     }
 
-    function openAvatarSelectionModal() {
+    function updatePlayerProfileUI() {
+        const playerName = localStorage.getItem('user_name') || 'Oyuncu';
+        const playerAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
+
+        const navNameEl = document.getElementById('nav-player-name');
+        if (navNameEl) navNameEl.innerText = playerName;
+
+        document.querySelectorAll('.nav-avatar-btn img').forEach(img => {
+            img.src = playerAvatar;
+        });
+
+        updateChampionBanner();
+    }
+
+    function openAvatarSelectionModal(isFirstTime = false) {
         const avatars = [
-            { name: "Varsayılan", path: "assets/images/kids_avatar.jpg" },
-            { name: "Panda", path: "assets/images/avatars/panda.png" },
+            { name: "Tavşan", path: "assets/images/avatars/rabbit.png" },
             { name: "Kedi", path: "assets/images/avatars/cat.png" },
             { name: "Köpek", path: "assets/images/avatars/dog.png" },
-            { name: "Tavşan", path: "assets/images/avatars/rabbit.png" },
-            { name: "Tilki", path: "assets/images/avatars/fox.png" },
-            { name: "Ayı", path: "assets/images/avatars/bear.png" },
-            { name: "Koala", path: "assets/images/avatars/koala.png" },
-            { name: "Kaplan", path: "assets/images/avatars/tiger.png" },
+            { name: "Ayıcık", path: "assets/images/avatars/bear.png" },
+            { name: "Panda", path: "assets/images/avatars/panda.png" },
             { name: "Aslan", path: "assets/images/avatars/lion.png" },
-            { name: "İnek", path: "assets/images/avatars/cow.png" },
-            { name: "Kurbağa", path: "assets/images/avatars/frog.png" },
-            { name: "Maymun", path: "assets/images/avatars/monkey.png" },
+            { name: "Tilki", path: "assets/images/avatars/fox.png" },
             { name: "Penguen", path: "assets/images/avatars/penguin.png" },
-            { name: "Kelebek", path: "assets/images/avatars/butterfly.jpg" },
-            { name: "Zürafa", path: "assets/images/avatars/giraffe.jpg" }
+            { name: "Baykuş", path: "assets/images/avatars/owl.png" },
+            { name: "Unicorn", path: "assets/images/avatars/unicorn.png" },
+            { name: "Maymun", path: "assets/images/avatars/monkey.png" },
+            { name: "Ahtapot", path: "assets/images/avatars/octopus.png" }
         ];
-        
-        let avatarsHTML = `
-            <div class="avatar-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; padding: 15px 0; max-height:400px; overflow-y:auto;">
+
+        let selectedAvatarPath = localStorage.getItem('selectedAvatar') || avatars[0].path;
+        let currentName = localStorage.getItem('user_name') || '';
+
+        let contentHTML = `
+            <div style="text-align:center; padding: 5px 0; user-select:none;">
+                <div style="font-size: 1rem; font-weight: 800; color: #475569; margin-bottom: 12px;">
+                    ${isFirstTime ? '🎉 MİNİKİO\'na Hoş Geldin! Lütfen ismini yaz ve karakterini seç:' : 'İsmini ve Profil Karakterini Düzenle:'}
+                </div>
+                
+                <!-- Player Name Input -->
+                <div style="margin-bottom: 18px; max-width: 320px; margin-left: auto; margin-right: auto;">
+                    <label style="display:block; font-weight:900; font-size:0.85rem; color:#64748b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">İSMİNİZ / NICKNAME</label>
+                    <input id="profile-name-input" type="text" value="${currentName}" placeholder="Örn: Ayşe, Ali, Efe..." style="width:100%; padding:12px 18px; border-radius:16px; border:2.5px solid #c084fc; font-size:1.15rem; font-weight:800; text-align:center; box-sizing:border-box; box-shadow:0 4px 12px rgba(192,132,252,0.2); outline:none; color:#1e293b; background:#ffffff;">
+                </div>
+
+                <div style="font-weight:900; font-size:0.85rem; color:#64748b; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">KARAKTERİNİ SEÇ (DOKUN)</div>
+
+                <!-- Avatar Selection Grid -->
+                <div class="avatar-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 10px; padding: 10px; max-height:240px; overflow-y:auto; border-radius: 18px; background: rgba(248,250,252,0.9); border: 2px solid #cbd5e1;">
         `;
-        
-        const currentAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
-        
+
         avatars.forEach(av => {
-            const isSelected = av.path === currentAvatar;
-            avatarsHTML += `
-                <div class="avatar-option-card" data-val="${av.path}" style="border: 3px solid ${isSelected ? 'var(--pastel-purple)' : 'transparent'}; background: var(--bg-card); border-radius: 20px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-small);">
-                    <img src="${av.path}" alt="${av.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--text-muted); margin-bottom: 8px; background:var(--pastel-blue);">
-                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${av.name}</div>
+            const isSelected = av.path === selectedAvatarPath;
+            contentHTML += `
+                <div class="avatar-option-card ${isSelected ? 'selected-avatar' : ''}" data-val="${av.path}" style="border: 3.5px solid ${isSelected ? '#f43f5e' : 'transparent'}; background: #ffffff; border-radius: 18px; padding: 6px; text-align: center; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease; box-shadow: ${isSelected ? '0 0 14px rgba(244,63,94,0.45)' : '0 2px 6px rgba(0,0,0,0.06)'}; transform: ${isSelected ? 'scale(1.05)' : 'scale(1)'};">
+                    <img src="${av.path}" alt="${av.name}" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1; margin-bottom: 2px; background:#e2e8f0; pointer-events:none;">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #334155; pointer-events:none;">${av.name}</div>
                 </div>
             `;
         });
-        
-        avatarsHTML += `</div>`;
-        
-        showModal("Profil Karakterini Seç", avatarsHTML);
-        
-        // Dinamik tıklama ve hover dinleyicileri
-        const options = document.querySelectorAll(".avatar-option-card");
+
+        contentHTML += `
+                </div>
+
+                <!-- Save / Start Button -->
+                <button id="btn-save-profile" type="button" style="width: 100%; max-width: 320px; margin-top: 20px; padding: 14px; border-radius: 18px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f43f5e, #e11d48); border: none; color: white; box-shadow: 0 8px 20px rgba(244,63,94,0.45); cursor: pointer; transition: transform 0.15s ease;">
+                    🚀 Kaydet ve Maceraya Başla!
+                </button>
+            </div>
+        `;
+
+        showModal(isFirstTime ? "🎉 Profilini Oluştur" : "Profil & Karakter Düzenle", contentHTML);
+
+        const modalContainer = document.getElementById("modal-body");
+        if (!modalContainer) return;
+
+        const options = modalContainer.querySelectorAll(".avatar-option-card");
         options.forEach(opt => {
-            opt.addEventListener("click", () => {
-                const selectedVal = opt.getAttribute("data-val");
-                localStorage.setItem('selectedAvatar', selectedVal);
-                if(window.updateAvatarUI) window.updateAvatarUI(selectedVal);
-                playSound('success');
-                closeModal();
-            });
-            opt.addEventListener("mouseenter", () => {
-                opt.style.transform = "scale(1.1)";
-            });
-            opt.addEventListener("mouseleave", () => {
-                opt.style.transform = "scale(1)";
-            });
+            const selectThisAvatar = (e) => {
+                if (e) e.preventDefault();
+                selectedAvatarPath = opt.getAttribute("data-val");
+                options.forEach(o => {
+                    o.style.borderColor = "transparent";
+                    o.style.boxShadow = "0 2px 6px rgba(0,0,0,0.06)";
+                    o.style.transform = "scale(1)";
+                });
+                opt.style.borderColor = "#f43f5e";
+                opt.style.boxShadow = "0 0 14px rgba(244,63,94,0.45)";
+                opt.style.transform = "scale(1.05)";
+                if (window.playSound) window.playSound('click');
+            };
+
+            opt.addEventListener("click", selectThisAvatar);
         });
+
+        const saveBtn = modalContainer.querySelector('#btn-save-profile');
+        if (saveBtn) {
+            const handleSave = (e) => {
+                if (e) e.preventDefault();
+                const nameInput = modalContainer.querySelector('#profile-name-input');
+                let finalName = (nameInput ? nameInput.value.trim() : '') || 'Oyuncu';
+                
+                localStorage.setItem('user_name', finalName);
+                localStorage.setItem('selectedAvatar', selectedAvatarPath);
+                localStorage.setItem('user_profile_setup', 'true');
+
+                updatePlayerProfileUI();
+                renderCategories();
+                filterAndRenderGames();
+
+                if (window.playSound) window.playSound('success');
+                closeModal();
+            };
+
+            saveBtn.addEventListener('click', handleSave);
+        }
     }
 
-    // 9. Kategorileri Render Etme (Render Categories)
+    // 8.6 LİDERLİK TABLOSU VE İSTATİSTİKLER MOTORU (Pure Dynamic Player Leaderboards)
+    function getGameLeaderboard(gameId) {
+        try {
+            const dataStr = localStorage.getItem(`game_${gameId}_leaderboard`);
+            if (dataStr) {
+                const data = JSON.parse(dataStr);
+                if (data && Array.isArray(data) && data.length > 0) {
+                    // Daha önce kaydedilmiş sanal botları filtrele
+                    const realData = data.filter(item => 
+                        item.name !== "Ayşe K." && 
+                        item.name !== "Mehmet Y." && 
+                        item.name !== "Zeynep T."
+                    );
+                    return realData;
+                }
+            }
+        } catch(e) {}
+        
+        return [];
+    }
+
+    function recordGameScore(gameId, newScore) {
+        if (!newScore || newScore <= 0) return;
+
+        const userName = localStorage.getItem('user_name') || 'Oyuncu';
+        const userAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/kids_avatar.jpg';
+
+        let list = getGameLeaderboard(gameId);
+        
+        const cleanUserName = userName.replace(' (Sen)', '').trim();
+        list = list.filter(item => {
+            const itemClean = item.name.replace(' (Sen)', '').trim();
+            return itemClean !== cleanUserName;
+        });
+
+        list.push({
+            name: cleanUserName + ' (Sen)',
+            avatar: userAvatar,
+            score: newScore,
+            isUser: true,
+            date: new Date().toLocaleDateString('tr-TR')
+        });
+
+        list.sort((a, b) => b.score - a.score);
+        list = list.slice(0, 5);
+
+        localStorage.setItem(`game_${gameId}_leaderboard`, JSON.stringify(list));
+        localStorage.setItem(`minikio_game_${gameId}_highscore`, newScore);
+
+        updateChampionBanner();
+
+        if (activeCategory === 'LEADERBOARD') {
+            renderLeaderboardDashboard();
+        }
+    }
+
+    window.recordGameScore = recordGameScore;
+    window.updateLeaderboardForGame = recordGameScore;
+
+    function getOverallChampion() {
+        let topItem = null;
+
+        if (window.gamesData) {
+            window.gamesData.forEach(game => {
+                const board = getGameLeaderboard(game.id);
+                if (board && board.length > 0) {
+                    if (!topItem || board[0].score > topItem.score) {
+                        topItem = {
+                            name: board[0].name.replace(' (Sen)', '').trim(),
+                            avatar: board[0].avatar,
+                            score: board[0].score,
+                            gameName: game.name
+                        };
+                    }
+                }
+            });
+        }
+
+        if (!topItem) {
+            const currentName = localStorage.getItem('user_name') || 'Şampiyon Adayı';
+            const currentAvatar = localStorage.getItem('selectedAvatar') || 'assets/images/avatars/lion.png';
+            topItem = {
+                name: currentName,
+                avatar: currentAvatar,
+                score: 0,
+                gameName: 'MİNİKİO'
+            };
+        }
+
+        return topItem;
+    }
+
+    function updateChampionBanner() {
+        const champ = getOverallChampion();
+        const champImg = document.getElementById('champion-avatar-img');
+        const champName = document.getElementById('champion-name');
+        const champScoreVal = document.getElementById('champion-score-val');
+
+        if (champImg) champImg.src = champ.avatar;
+        if (champName) champName.innerHTML = `${champ.name} 🏆`;
+        if (champScoreVal) {
+            if (champ.score > 0) {
+                champScoreVal.innerHTML = `<span style="color:#d97706; font-size: 1.1rem; font-weight:900;">${champ.score.toLocaleString('tr-TR')} Puan</span> <span style="font-size:0.8rem; color:#64748b;">(${champ.gameName})</span>`;
+            } else {
+                champScoreVal.innerHTML = `<span style="color:#f59e0b; font-size: 0.9rem; font-weight:800;">Oyun oyna ve 1. sıraya yerleş! 🚀</span>`;
+            }
+        }
+    }
+
+    function renderLeaderboardDashboard() {
+        let html = `
+            <div style="grid-column: 1 / -1; width: 100%; max-width: 1000px; margin: 0 auto; user-select: none;">
+                <!-- Header Dashboard Card -->
+                <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 24px; padding: 25px 20px; text-align: center; color: white; border: 3.5px solid #f59e0b; box-shadow: 0 12px 32px rgba(245,158,11,0.3); margin-bottom: 25px; position: relative; overflow: hidden;">
+                    <div style="font-size: 2.1rem; font-weight: 900; color: #fef08a; margin-bottom: 6px; letter-spacing: 0.5px; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">🏆 LİDERLİK TABLOSU & İSTATİSTİKLER 📊</div>
+                    <div style="font-size: 0.95rem; color: #cbd5e1; font-weight: 700;">Her oyun oynandıkça anlık güncellenen rekorlar ve şampiyonlar!</div>
+                </div>
+
+                <!-- Per-Game Leaderboard Cards Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px;">
+        `;
+
+        window.gamesData.forEach(game => {
+            const board = getGameLeaderboard(game.id);
+            const ranks = ['🥇', '🥈', '🥉'];
+            const rankColors = ['#d97706', '#64748b', '#b45309'];
+
+            let rowsHTML = '';
+            if (board.length === 0) {
+                rowsHTML = `
+                    <div style="text-align: center; padding: 16px 8px; color: #64748b; font-weight: 700; font-size: 0.85rem; background: rgba(248,250,252,0.6); border-radius: 14px; border: 1.5px dashed #cbd5e1;">
+                        🏆 Henüz rekor kırılmadı!<br><span style="color:#d97706; font-weight:800; display:inline-block; margin-top:4px;">İlk rekoru sen kır! 🚀</span>
+                    </div>
+                `;
+            } else {
+                board.forEach((player, idx) => {
+                    rowsHTML += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 14px; background: ${player.isUser ? 'rgba(254,243,199,0.92)' : 'rgba(248,250,252,0.95)'}; border: 1.5px solid ${player.isUser ? '#f59e0b' : '#e2e8f0'}; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.15rem;">${ranks[idx] || '🎖️'}</span>
+                                <img src="${player.avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid #cbd5e1; background:#ffffff;">
+                                <span style="font-weight: ${player.isUser ? '900' : '700'}; font-size: 0.88rem; color: ${player.isUser ? '#b45309' : '#1e293b'};">${player.name}</span>
+                            </div>
+                            <span style="font-weight: 900; font-size: 0.92rem; color: ${rankColors[idx] || '#475569'};">${player.score.toLocaleString('tr-TR')} Puan</span>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                <div class="glass" style="border-radius: 20px; padding: 16px; border: 2.5px solid rgba(255,255,255,0.9); box-shadow: 0 8px 20px rgba(0,0,0,0.06); background: rgba(255,255,255,0.85);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px dashed #e2e8f0;">
+                        <img src="${game.image}" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover; border: 2px solid ${game.color};">
+                        <div>
+                            <div style="font-weight: 900; font-size: 0.95rem; color: #0f172a;">${game.name}</div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">${game.category}</div>
+                        </div>
+                    </div>
+                    ${rowsHTML}
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        gamesGrid.innerHTML = html;
+    }
+
+    // 8.7 FAVORİ YÖNETİMİ (Favorites System)
+    function getFavorites() {
+        try {
+            return JSON.parse(localStorage.getItem('minikio_favorites') || '[]');
+        } catch(e) {
+            return [];
+        }
+    }
+
+    function isFavorite(gameId) {
+        return getFavorites().includes(gameId);
+    }
+
+    function toggleFavorite(gameId, event) {
+        if (event) event.stopPropagation();
+        let favs = getFavorites();
+        if (favs.includes(gameId)) {
+            favs = favs.filter(id => id !== gameId);
+            if (window.playSound) window.playSound('click');
+        } else {
+            favs.push(gameId);
+            if (window.playSound) window.playSound('pop');
+        }
+        localStorage.setItem('minikio_favorites', JSON.stringify(favs));
+        renderCategories();
+        filterAndRenderGames();
+    }
+
+    // 9. Ana Menü Kategorilerini Render Etme (Render ONLY 3 Main Navigation Cards)
     function renderCategories() {
         categoriesContainer.innerHTML = "";
+        categoriesContainer.style.display = "flex";
+        categoriesContainer.style.flexWrap = "wrap";
+        categoriesContainer.style.justifyContent = "center";
+        categoriesContainer.style.alignItems = "center";
+        categoriesContainer.style.gap = "18px";
+        categoriesContainer.style.maxWidth = "960px";
+        categoriesContainer.style.margin = "0 auto";
+        categoriesContainer.style.padding = "5px 0";
         
-        // Kategorileri döngüyle ekleme
-        const categoriesList = Object.keys(window.categoriesConfig);
-        
-        // "Tümü" seçeneği
+        // 1. "Tüm Oyunlar" 🎮
         const allCard = document.createElement("div");
-        allCard.className = "category-card glass active";
-        allCard.style.setProperty("--accent-color", "var(--pastel-blue)");
+        allCard.className = `main-nav-card glass ${activeCategory === null ? 'active' : ''}`;
+        allCard.style.setProperty("--accent-color", "#6366f1");
+        allCard.style.setProperty("--accent-glow", "rgba(99, 102, 241, 0.35)");
         allCard.innerHTML = `
-            <div class="category-icon-wrapper">
-                <i data-lucide="layout-grid"></i>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="nav-card-icon" style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #a855f7, #6366f1); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">
+                    🎮
+                </div>
+                <div class="nav-card-text">
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px;">Tüm Oyunlar</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top:2px;">Keşfet ve Oyna</div>
+                </div>
             </div>
-            <div class="category-title">Tüm Oyunlar</div>
-            <div class="category-count">100 Oyun</div>
+            <div class="nav-card-badge" style="font-size: 0.75rem; font-weight: 800; color: #6366f1; background: rgba(99, 102, 241, 0.1); padding: 4px 10px; border-radius: 10px; letter-spacing: 0.5px;">
+                ${window.gamesData.length} Oyun
+            </div>
         `;
         allCard.addEventListener("click", () => {
             selectCategory(null, allCard);
         });
         categoriesContainer.appendChild(allCard);
 
-        categoriesList.forEach(cat => {
-            const config = window.categoriesConfig[cat];
-            const card = document.createElement("div");
-            card.className = "category-card glass";
-            card.style.setProperty("--accent-color", config.color);
-            
-            // Bu kategoride kaç oyun var bulalım
-            const count = window.gamesData.filter(g => g.category === cat).length;
-
-            card.innerHTML = `
-                <div class="category-icon-wrapper">
-                    <i data-lucide="${config.icon}"></i>
+        // 2. "Favorilerim" ❤️
+        const favsCount = getFavorites().length;
+        const favCard = document.createElement("div");
+        favCard.className = `main-nav-card glass ${activeCategory === 'FAVORITES' ? 'active' : ''}`;
+        favCard.style.setProperty("--accent-color", "#f43f5e");
+        favCard.style.setProperty("--accent-glow", "rgba(244, 63, 94, 0.35)");
+        favCard.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="nav-card-icon" style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #f43f5e, #fb7185); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow: 0 4px 10px rgba(244, 63, 94, 0.3);">
+                    ❤️
                 </div>
-                <div class="category-title">${cat}</div>
-                <div class="category-count">${count} Oyun</div>
-            `;
-            
-            card.addEventListener("click", () => {
-                selectCategory(cat, card);
-            });
-            
-            categoriesContainer.appendChild(card);
+                <div class="nav-card-text">
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px;">Favorilerim</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top:2px;">Sevdiklerin Burada</div>
+                </div>
+            </div>
+            <div class="nav-card-badge" style="font-size: 0.75rem; font-weight: 800; color: #f43f5e; background: rgba(244, 63, 94, 0.1); padding: 4px 10px; border-radius: 10px; letter-spacing: 0.5px;">
+                ${favsCount} Oyun
+            </div>
+        `;
+        favCard.addEventListener("click", () => {
+            selectCategory('FAVORITES', favCard);
         });
-        
+        categoriesContainer.appendChild(favCard);
+
+        // 3. "İstatistikler" 📊
+        const statsCard = document.createElement("div");
+        statsCard.className = `main-nav-card glass ${activeCategory === 'LEADERBOARD' ? 'active' : ''}`;
+        statsCard.style.setProperty("--accent-color", "#f59e0b");
+        statsCard.style.setProperty("--accent-glow", "rgba(245, 158, 11, 0.35)");
+        statsCard.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="nav-card-icon" style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);">
+                    📊
+                </div>
+                <div class="nav-card-text">
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px;">İstatistikler</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top:2px;">Liderlik Tablosu</div>
+                </div>
+            </div>
+            <div class="nav-card-badge" style="font-size: 0.75rem; font-weight: 800; color: #d97706; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 10px; letter-spacing: 0.5px;">
+                Sıralama 🏆
+            </div>
+        `;
+        statsCard.addEventListener("click", () => {
+            selectCategory('LEADERBOARD', statsCard);
+        });
+        categoriesContainer.appendChild(statsCard);
+
+        // 4. "Başarılarım & İlerlemem" 🏆
+        const achCard = document.createElement("div");
+        achCard.className = `main-nav-card glass ${activeCategory === 'ACHIEVEMENTS' ? 'active' : ''}`;
+        achCard.style.setProperty("--accent-color", "#10b981");
+        achCard.style.setProperty("--accent-glow", "rgba(16, 185, 129, 0.35)");
+        achCard.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="nav-card-icon" style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                    🏆
+                </div>
+                <div class="nav-card-text">
+                    <div style="font-size: 1rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.3px;">Başarılarım & İlerlemem</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top:2px;">Görevler & Rozetler</div>
+                </div>
+            </div>
+            <div class="nav-card-badge" style="font-size: 0.75rem; font-weight: 800; color: #059669; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 10px; letter-spacing: 0.5px;">
+                Panel 🎖️
+            </div>
+        `;
+        achCard.addEventListener("click", () => {
+            selectCategory('ACHIEVEMENTS', achCard);
+        });
+        categoriesContainer.appendChild(achCard);
+
         lucide.createIcons();
     }
 
     function selectCategory(categoryName, cardElement) {
         playSound('click');
-        // Aktif sınıfını düzenleme
-        document.querySelectorAll(".category-card").forEach(c => c.classList.remove("active"));
-        cardElement.classList.add("active");
+        document.querySelectorAll(".main-nav-card").forEach(c => c.classList.remove("active"));
+        if (cardElement) cardElement.classList.add("active");
         
         activeCategory = categoryName;
         filterAndRenderGames();
     }
 
-    // 10. Oyunları Render Etme (Render 100 Games Grid)
+    // 10. Oyunları Render Etme (Render Games or Leaderboard Dashboard)
     function filterAndRenderGames() {
         gamesGrid.innerHTML = "";
         
-        // Filtreleme
+        if (promoSection) {
+            promoSection.style.display = (activeCategory === 'ACHIEVEMENTS') ? "block" : "none";
+        }
+
+        if (activeCategory === 'LEADERBOARD') {
+            renderLeaderboardDashboard();
+            lucide.createIcons();
+            return;
+        }
+
+        if (activeCategory === 'ACHIEVEMENTS') {
+            renderAchievementsCategoryView();
+            return;
+        }
+        
         const filteredGames = window.gamesData.filter(game => {
-            const matchesCategory = activeCategory ? game.category === activeCategory : true;
+            let matchesCategory = true;
+            if (activeCategory === 'FAVORITES') {
+                matchesCategory = isFavorite(game.id);
+            } else if (activeCategory) {
+                matchesCategory = game.category === activeCategory;
+            }
             const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                   game.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                   game.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -360,13 +732,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (filteredGames.length === 0) {
-            gamesGrid.innerHTML = `
-                <div class="no-results glass" style="grid-column: 1 / -1; padding: 40px; text-align: center; border-radius: var(--radius-md);">
-                    <i data-lucide="frown" style="width: 48px; height: 48px; margin: 0 auto 15px; color: var(--text-muted);"></i>
-                    <h3>Aradığın oyunu bulamadık!</h3>
-                    <p style="color: var(--text-muted); margin-top: 10px;">Farklı bir kelimeyle aramayı dene veya diğer kategorilere göz at.</p>
-                </div>
-            `;
+            if (activeCategory === 'FAVORITES') {
+                gamesGrid.innerHTML = `
+                    <div class="no-results glass" style="grid-column: 1 / -1; padding: 45px 20px; text-align: center; border-radius: var(--radius-md); background: rgba(255, 241, 242, 0.85); border: 2.5px dashed #f43f5e;">
+                        <div style="font-size: 3.5rem; margin-bottom: 8px;">❤️</div>
+                        <h3 style="color: #e11d48; font-weight: 900; font-size: 1.4rem;">Henüz Favori Oyunun Yok!</h3>
+                        <p style="color: #9f1239; margin-top: 10px; font-weight: 600; max-width: 450px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                            Beğendiğin oyunların kapaklarının sağ üst köşesindeki kalp 🤍 butonuna dokunarak kendi özel favori oyun listenizi hemen oluşturabilirsin!
+                        </p>
+                    </div>
+                `;
+            } else {
+                gamesGrid.innerHTML = `
+                    <div class="no-results glass" style="grid-column: 1 / -1; padding: 40px; text-align: center; border-radius: var(--radius-md);">
+                        <i data-lucide="frown" style="width: 48px; height: 48px; margin: 0 auto 15px; color: var(--text-muted);"></i>
+                        <h3>Aradığın oyunu bulamadık!</h3>
+                        <p style="color: var(--text-muted); margin-top: 10px;">Farklı bir kelimeyle aramayı dene veya diğer kategorilere göz at.</p>
+                    </div>
+                `;
+            }
             lucide.createIcons();
             return;
         }
@@ -375,7 +759,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement("div");
             card.className = `game-card glass ${game.locked ? 'locked' : ''}`;
             
-            // Kilit durumuna göre badge ve buton yapısı
+            const fav = isFavorite(game.id);
+            const favBtnHTML = `<button class="game-fav-btn ${fav ? 'active' : ''}" data-id="${game.id}" title="${fav ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}">${fav ? '❤️' : '🤍'}</button>`;
+
             let ribbonHTML = "";
             let btnHTML = "";
             let imageHTML = "";
@@ -383,31 +769,28 @@ document.addEventListener("DOMContentLoaded", () => {
             if (game.locked) {
                 ribbonHTML = `<div class="ribbon-locked">Çok Yakında</div>`;
                 btnHTML = `<button class="btn btn-locked game-play-btn" data-id="${game.id}">Yakında</button>`;
-                // Locked oyunlar için sevimli bir pastel gradyan kapak
                 imageHTML = `<div class="game-card-img" style="background: linear-gradient(135deg, ${game.color}50 0%, ${game.color} 100%); display:flex; align-items:center; justify-content:center; height: 100%; width: 100%;">
                                 <div style="font-size: 3rem; opacity: 0.25;">✨</div>
                              </div>`;
             } else {
-                ribbonHTML = `<div class="game-card-badge" style="background: var(--pastel-green);">Yeni Oyun</div>`;
+                ribbonHTML = ``;
                 btnHTML = `<button class="btn btn-success game-play-btn" data-id="${game.id}">Oyna</button>`;
                 imageHTML = `<img src="${game.image}" alt="${game.name}" class="game-card-img">`;
             }
 
-            // Beceri etiketleri
             const skillsHTML = game.skills.map(s => `<span class="skill-tag">${s}</span>`).join('');
 
             card.innerHTML = `
                 <div class="game-card-img-wrapper">
                     ${imageHTML}
+                    ${favBtnHTML}
                     ${ribbonHTML}
-                    <div class="game-card-difficulty">${game.difficulty}</div>
                     ${game.locked ? `<div class="lock-overlay"><i data-lucide="lock"></i></div>` : ''}
                 </div>
                 <div class="game-card-content">
                     <h3 class="game-card-title">${game.name}</h3>
                     <div class="game-card-meta">
                         <span class="meta-item">${game.category}</span>
-                        <span class="meta-item">${game.age}</span>
                     </div>
                     <p class="game-card-desc">${game.desc}</p>
                     <div class="game-card-skills">
@@ -417,9 +800,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
             
-            // Oyna / Yakında Buton Etkileşimi
-            const btnPlay = card.querySelector(".game-play-btn");
-            btnPlay.addEventListener("click", () => {
+            const favBtn = card.querySelector('.game-fav-btn');
+            if (favBtn) {
+                favBtn.addEventListener("click", (e) => {
+                    toggleFavorite(game.id, e);
+                });
+            }
+
+            card.style.cursor = "pointer";
+            card.addEventListener("click", (e) => {
+                if (e.target.closest('.game-fav-btn')) return;
                 handleGameLaunch(game);
             });
 
@@ -441,7 +831,148 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("categories-section").scrollIntoView({ behavior: 'smooth' });
     });
 
-    // 12. İlerleme ve Başarıları Render Etme (Render Achievements)
+    // 12. İlerleme ve Başarıları Render Etme (Render Achievements Panel)
+    function renderAchievementsCategoryView() {
+        const data = window.achievementsData;
+
+        gamesGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; width: 100%;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Sol Kart: Günlük Görevler -->
+                    <div class="widget-card glass" style="padding: 24px; border-radius: 24px; background: rgba(255,255,255,0.85); border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <h3 class="widget-title" style="margin-bottom: 18px; font-weight: 900; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
+                            <i data-lucide="check-square" style="color: #3b82f6;"></i> Günlük Görevler
+                        </h3>
+                        <div id="tasks-list-grid" class="tasks-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+
+                    <!-- Orta Kart: Gelişim Durumum -->
+                    <div class="widget-card glass" style="padding: 24px; border-radius: 24px; background: rgba(255,255,255,0.85); border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <h3 class="widget-title" style="margin-bottom: 18px; font-weight: 900; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
+                            <i data-lucide="sparkles" style="color: #eab308;"></i> Gelişim Durumum
+                        </h3>
+                        <div class="stats-container">
+                            <div class="stats-summary" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                                <div class="stat-box stars" style="background: rgba(254, 240, 138, 0.45); padding: 14px; border-radius: 18px; text-align: center; border: 1.5px solid #fde047;">
+                                    <div class="stat-val" style="font-size: 1.8rem; font-weight: 900; color: #ca8a04;">${data.userStats.stars}</div>
+                                    <div class="stat-lbl" style="font-size: 0.78rem; font-weight: 700; color: #854d0e;">Toplanan Yıldız</div>
+                                </div>
+                                <div class="stat-box" style="background: rgba(191, 219, 254, 0.45); padding: 14px; border-radius: 18px; text-align: center; border: 1.5px solid #93c5fd;">
+                                    <div class="stat-val" style="font-size: 1.8rem; font-weight: 900; color: #2563eb;">${data.userStats.completedGames}</div>
+                                    <div class="stat-lbl" style="font-size: 0.78rem; font-weight: 700; color: #1e40af;">Biten Oyun</div>
+                                </div>
+                                <div class="stat-box" style="background: rgba(187, 247, 208, 0.45); padding: 14px; border-radius: 18px; text-align: center; border: 1.5px solid #86efac;">
+                                    <div class="stat-val" style="font-size: 1.8rem; font-weight: 900; color: #16a34a;">${data.userStats.totalScore}</div>
+                                    <div class="stat-lbl" style="font-size: 0.78rem; font-weight: 700; color: #166534;">Toplam Puan</div>
+                                </div>
+                                <div class="stat-box" style="background: rgba(245, 208, 254, 0.45); padding: 14px; border-radius: 18px; text-align: center; border: 1.5px solid #f5d0fe;">
+                                    <div class="stat-val" style="font-size: 1.8rem; font-weight: 900; color: #9333ea;">${data.userStats.highestStreak} Gün</div>
+                                    <div class="stat-lbl" style="font-size: 0.78rem; font-weight: 700; color: #6b21a8;">Aktif Seri</div>
+                                </div>
+                            </div>
+                            
+                            <div class="progress-container" style="background: rgba(241, 245, 249, 0.8); padding: 14px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                                <div class="progress-header" style="display:flex; justify-content:space-between; font-weight:800; font-size:0.88rem; margin-bottom:8px; color: var(--text-main);">
+                                    <span>Günlük Görev İlerlemesi</span>
+                                    <span style="color: #10b981;">%${data.userStats.progressPercentage}</span>
+                                </div>
+                                <div class="progress-bar-bg" style="height: 14px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden;">
+                                    <div class="progress-bar-fill" style="width: ${data.userStats.progressPercentage}%; height: 100%; background: linear-gradient(90deg, #10b981, #3b82f6); border-radius: 10px; transition: width 0.4s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sağ Kart: Rozet Dolabı -->
+                    <div class="widget-card glass" style="padding: 24px; border-radius: 24px; background: rgba(255,255,255,0.85); border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <h3 class="widget-title" style="margin-bottom: 18px; font-weight: 900; font-size: 1.25rem; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
+                            <i data-lucide="award" style="color: #ec4899;"></i> Rozet Dolabı
+                        </h3>
+                        <div id="badge-cabinet-grid" class="badge-cabinet" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Render tasks into tasks-list-grid
+        const tasksGrid = gamesGrid.querySelector("#tasks-list-grid");
+        if (tasksGrid) {
+            data.dailyTasks.forEach(task => {
+                const li = document.createElement("div");
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                li.style.cssText = `display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: ${task.completed ? 'rgba(220, 252, 231, 0.8)' : 'rgba(248, 250, 252, 0.9)'}; border: 1.5px solid ${task.completed ? '#86efac' : '#e2e8f0'}; cursor: pointer; transition: all 0.2s ease;`;
+                
+                li.innerHTML = `
+                    <div class="task-info" style="display: flex; align-items: center; gap: 10px;">
+                        <div class="task-checkbox-custom" style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid ${task.completed ? '#16a34a' : '#cbd5e1'}; background: ${task.completed ? '#16a34a' : 'white'}; display: flex; align-items: center; justify-content: center; color: white;">
+                            ${task.completed ? '<i data-lucide="check" style="width: 14px; height: 14px;"></i>' : ''}
+                        </div>
+                        <span class="task-name" style="font-weight: 700; font-size: 0.9rem; color: ${task.completed ? '#15803d' : 'var(--text-main)'}; ${task.completed ? 'text-decoration: line-through;' : ''}">${task.name}</span>
+                    </div>
+                    <div class="task-reward" style="display: flex; align-items: center; gap: 4px; font-weight: 900; font-size: 0.85rem; color: #d97706; background: #fef3c7; padding: 4px 10px; border-radius: 10px; border: 1px solid #fde68a;">
+                        <span>+${task.reward}</span>
+                        <i data-lucide="star" style="width: 14px; height: 14px; fill: #D97706;"></i>
+                    </div>
+                `;
+                li.addEventListener("click", () => {
+                    playSound('click');
+                    task.completed = !task.completed;
+                    if (task.completed) {
+                        data.userStats.stars += task.reward;
+                        playSound('success');
+                    } else {
+                        data.userStats.stars -= task.reward;
+                    }
+                    const completedCount = data.dailyTasks.filter(t => t.completed).length;
+                    data.userStats.progressPercentage = Math.round((completedCount / data.dailyTasks.length) * 100);
+                    renderAchievementsCategoryView();
+                    renderAchievements();
+                });
+                tasksGrid.appendChild(li);
+            });
+        }
+
+        // Render badges into badge-cabinet-grid
+        const badgeGrid = gamesGrid.querySelector("#badge-cabinet-grid");
+        if (badgeGrid) {
+            data.badges.forEach(badge => {
+                const item = document.createElement("div");
+                item.className = `badge-item ${badge.unlocked ? '' : 'locked'}`;
+                item.style.cssText = `display: flex; flex-direction: column; align-items: center; padding: 10px 6px; border-radius: 16px; background: ${badge.unlocked ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : '#f1f5f9'}; border: 1.5px solid ${badge.unlocked ? '#f59e0b' : '#cbd5e1'}; cursor: pointer; text-align: center; opacity: ${badge.unlocked ? '1' : '0.55'}; transition: transform 0.2s ease;`;
+                item.innerHTML = `
+                    <div class="badge-icon-wrapper" style="font-size: 2.2rem; margin-bottom: 4px;">${badge.icon}</div>
+                    <div class="badge-name" style="font-size: 0.72rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">${badge.name}</div>
+                `;
+                item.addEventListener("click", () => {
+                    if (badge.unlocked) {
+                        playSound('success');
+                        showModal("Rozet Detayı", `
+                            <div style="text-align:center; padding: 10px 0;">
+                                <div style="font-size: 4rem; margin-bottom: 15px; animation: bounce-loop 2s infinite ease-in-out;">${badge.icon}</div>
+                                <h3>${badge.name}</h3>
+                                <p style="margin-top:10px; color:var(--text-muted);">${badge.desc}</p>
+                                <div style="margin-top:20px; background: rgba(202, 255, 191, 0.2); border: 1px solid rgba(202, 255, 191, 0.5); padding:10px; border-radius:12px; display:inline-block; font-weight:700; color:#15803d;">🎉 Bu başarıyı kazandın!</div>
+                            </div>
+                        `);
+                    } else {
+                        playSound('locked');
+                        showModal("Kilitli Rozet", `
+                            <div style="text-align:center; padding: 10px 0; opacity: 0.8;">
+                                <div style="font-size: 4rem; margin-bottom: 15px; filter: grayscale(100%);">🔒</div>
+                                <h3>${badge.name}</h3>
+                                <p style="margin-top:10px; color:var(--text-muted);">${badge.desc}</p>
+                            </div>
+                        `);
+                    }
+                });
+                badgeGrid.appendChild(item);
+            });
+        }
+
+        lucide.createIcons();
+    }
+
+    // 13. İlerleme ve Başarıları Render Etme (Render Achievements)
     function renderAchievements() {
         const data = window.achievementsData;
         
@@ -541,6 +1072,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 13. Oyun Başlatma / Kilitli Oyun Simülasyonu ve Gerçek Oyun Mantığı
     function handleGameLaunch(game) {
+        window.CURRENT_ACTIVE_GAME_ID = game.id;
+        if(window.achievementsData) {
+             window.achievementsData.completeTask(1);
+        }
         // Can Kontrolü (Oyuna Özel)
         const heartsState = getGameHeartsState(game.id);
         const now = Date.now();
@@ -679,8 +1214,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 startConnectDotsGame(modalBodyElement, 1);
             } else if (game.id === 17) {
                 if (window.startColorSortGame) window.startColorSortGame(modalBodyElement, 1);
+            } else if (game.id === 18) {
+                if (window.startCodingRobotGame) window.startCodingRobotGame(modalBodyElement, 1);
+            } else if (game.id === 19) {
+                if (window.startSymmetryMirrorGame) window.startSymmetryMirrorGame(modalBodyElement, 1);
+            } else if (game.id === 20) {
+                if (window.startRhythmDanceGame) window.startRhythmDanceGame(modalBodyElement, 1);
+            } else if (game.id === 21) {
+                if (window.startBlockBlastGame) window.startBlockBlastGame(modalBodyElement, 1);
+            } else if (game.id === 22) {
+                if (window.startTargetShooterGame) window.startTargetShooterGame(modalBodyElement, 1);
+            } else if (game.id === 23) {
+                if (window.startGalacticCandyGame) window.startGalacticCandyGame(modalBodyElement, 1);
+            } else if (game.id === 24) {
+                if (window.startLaserOpticsGame) window.startLaserOpticsGame(modalBodyElement, 1);
+            } else if (game.id === 25) {
+                if (window.startGardenFarmGame) window.startGardenFarmGame(modalBodyElement, 1);
+                else if (window.startPipeFlowGame) window.startPipeFlowGame(modalBodyElement, 1);
+            } else if (game.id === 26) {
+                if (window.startChessGame) window.startChessGame(modalBodyElement, 1);
+                else if (window.startMastermindCodeGame) window.startMastermindCodeGame(modalBodyElement, 1);
+            } else if (game.id === 27) {
+                if (window.startUnoCardGame) window.startUnoCardGame(modalBodyElement, 1);
+                else if (window.startGravitySlingshotGame) window.startGravitySlingshotGame(modalBodyElement, 1);
+            } else if (game.id === 28) {
+                if (window.startPuzzleGame) window.startPuzzleGame(modalBodyElement, 1);
+                else if (window.startSoundPitchGame) window.startSoundPitchGame(modalBodyElement, 1);
+            } else if (game.id === 29) {
+                if (window.startLudoGame) window.startLudoGame(modalBodyElement, 1);
+            } else if (game.id === 30) {
+                if (window.start2048Game) window.start2048Game(modalBodyElement, 1);
             }
-        }, 2200);
+        }, 500);
     }
 
     // ============================================================
@@ -688,16 +1253,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     function startMemoryGame(container, levelNumber) {
         const LEVELS = [
-            { level: 1, name: "Başlangıç", emoji: "⭐", pairs: 3, cols: 3, gridClass: "cols-3", timeBonus: [15, 20, 25], scoreBase: 50, color: "#CAFFBF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙"] },
-            { level: 2, name: "Minik Patiler", emoji: "🐾", pairs: 4, cols: 4, gridClass: "cols-4", timeBonus: [18, 25, 30], scoreBase: 70, color: "#CAFFBF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙"] },
-            { level: 3, name: "Kolay", emoji: "🌟", pairs: 6, cols: 4, gridClass: "cols-4", timeBonus: [20, 30, 40], scoreBase: 100, color: "#A0C4FF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬"] },
-            { level: 4, name: "Dikkatli Gözler", emoji: "👀", pairs: 8, cols: 4, gridClass: "cols-4", timeBonus: [25, 40, 55], scoreBase: 150, color: "#A0C4FF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬"] },
-            { level: 5, name: "Orta", emoji: "🏆", pairs: 10, cols: 5, gridClass: "cols-5", timeBonus: [30, 50, 70], scoreBase: 200, color: "#FFD6A5", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊"] },
-            { level: 6, name: "Zihin Egzersizi", emoji: "🧠", pairs: 10, cols: 5, gridClass: "cols-5", timeBonus: [35, 60, 85], scoreBase: 250, color: "#FFD6A5", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊"] },
-            { level: 7, name: "Zor", emoji: "🔥", pairs: 12, cols: 6, gridClass: "cols-6", timeBonus: [40, 70, 100], scoreBase: 300, color: "#D8BBFF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊","🦈","🦭","🐿","🦩"] },
-            { level: 8, name: "Hafıza Ustası", emoji: "🎖️", pairs: 12, cols: 6, gridClass: "cols-6", timeBonus: [45, 80, 115], scoreBase: 350, color: "#D8BBFF", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊","🦈","🦭","🐿","🦩"] },
-            { level: 9, name: "Efsane", emoji: "👑", pairs: 15, cols: 6, gridClass: "cols-6", timeBonus: [50, 100, 150], scoreBase: 500, color: "#FFADAD", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊","🦈","🦭","🐿","🦩","🦏","🦛","🐆","🦬","🐂","🦤"] },
-            { level: 10, name: "Zeka Diyarı Kralı", emoji: "🔮", pairs: 18, cols: 6, gridClass: "cols-6", timeBonus: [60, 120, 180], scoreBase: 700, color: "#FFADAD", pool: ["🐼","🦊","🦁","🐰","🐵","🐸","🐧","🦄","🐙","🦋","🦀","🐬","🦉","🐺","🦓","🐘","🦒","🦚","🦜","🐊","🦈","🦭","🐿","🦩","🦏","🦛","🐆","🦬","🐂","🦤","🍎","🍌","🍒","🍇","🍉","🍊"] }
+            { level: 1, name: "Başlangıç", emoji: "⭐", pairs: 3, cols: 3, gridClass: "cols-3", timeBonus: [15, 20, 25], scoreBase: 50, color: "#CAFFBF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻"] },
+            { level: 2, name: "Minik Patiler", emoji: "🐾", pairs: 4, cols: 4, gridClass: "cols-4", timeBonus: [18, 25, 30], scoreBase: 70, color: "#CAFFBF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧"] },
+            { level: 3, name: "Kolay", emoji: "🌟", pairs: 6, cols: 4, gridClass: "cols-4", timeBonus: [20, 30, 40], scoreBase: 100, color: "#A0C4FF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙"] },
+            { level: 4, name: "Dikkatli Gözler", emoji: "👀", pairs: 8, cols: 4, gridClass: "cols-4", timeBonus: [25, 40, 55], scoreBase: 150, color: "#A0C4FF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉"] },
+            { level: 5, name: "Orta", emoji: "🏆", pairs: 10, cols: 5, gridClass: "cols-5", timeBonus: [30, 50, 70], scoreBase: 200, color: "#FFD6A5", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶"] },
+            { level: 6, name: "Zihin Egzersizi", emoji: "🧠", pairs: 10, cols: 5, gridClass: "cols-5", timeBonus: [35, 60, 85], scoreBase: 250, color: "#FFD6A5", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶","🐨"] },
+            { level: 7, name: "Zor", emoji: "🔥", pairs: 12, cols: 6, gridClass: "cols-6", timeBonus: [40, 70, 100], scoreBase: 300, color: "#D8BBFF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶","🐨","🐯","🦋"] },
+            { level: 8, name: "Hafıza Ustası", emoji: "🎖️", pairs: 12, cols: 6, gridClass: "cols-6", timeBonus: [45, 80, 115], scoreBase: 350, color: "#D8BBFF", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶","🐨","🐯","🦋","🦒"] },
+            { level: 9, name: "Efsane", emoji: "👑", pairs: 15, cols: 6, gridClass: "cols-6", timeBonus: [50, 100, 150], scoreBase: 500, color: "#FFADAD", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶","🐨","🐯","🦋","🦒","🐮"] },
+            { level: 10, name: "MİNİKİO Kralı", emoji: "🔮", pairs: 18, cols: 6, gridClass: "cols-6", timeBonus: [60, 120, 180], scoreBase: 700, color: "#FFADAD", pool: ["🐼","🦊","🦁","🐰","🐵","🐻","🐧","🦄","🐙","🦉","🐱","🐶","🐨","🐯","🦋","🦒","🐮"] }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
@@ -729,8 +1294,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardsHTML = cardPool.map((emoji, idx) => `
             <div class="memory-card" data-emoji="${emoji}" data-idx="${idx}">
                 <div class="memory-card-inner">
-                    <div class="memory-card-back">❓</div>
-                    <div class="memory-card-front">${emoji}</div>
+                    <div class="memory-card-back">
+                        ${window.getPixarCardBackHTML ? window.getPixarCardBackHTML() : '❓'}
+                    </div>
+                    <div class="memory-card-front">
+                        ${window.getPixarAnimalGraphic ? window.getPixarAnimalGraphic(emoji) : `<span style="font-size:1.8rem;">${emoji}</span>`}
+                    </div>
                 </div>
             </div>`).join('');
 
@@ -930,6 +1499,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (task2 && !task2.completed) { task2.completed = true; ach.userStats.stars += task2.reward; }
         const done = ach.dailyTasks.filter(t => t.completed).length;
         ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
         const badge = ach.badges.find(b => b.id === "memory_apprentice");
         if (badge) badge.unlocked = true;
         setTimeout(() => {
@@ -1313,6 +1887,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const done = ach.dailyTasks.filter(t => t.completed).length;
             ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
             setTimeout(() => {
                 container.innerHTML = `
@@ -1714,6 +2293,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const done = ach.dailyTasks.filter(t => t.completed).length;
             ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
             const badge = ach.badges.find(b => b.id === "math_wizard");
             if (badge) {
@@ -2178,6 +2762,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const done = ach.dailyTasks.filter(t => t.completed).length;
             ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
             const badge = ach.badges.find(b => b.id === "bookworm");
             if (badge) {
@@ -2518,6 +3107,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -2568,7 +3162,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 lockGame(5);
                 playSound('locked');
-                setTimeout(() => {
+        setTimeout(() => {
                     container.innerHTML = `
                         <div style="text-align:center; padding:16px 8px;">
                             <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥</div>
@@ -2615,149 +3209,291 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1000);
     }
     // ============================================================
-    // LABİRENT MACERASI (MANTIK) OYUN MOTORU
+    // LABİRENT MACERASI — 3D PIXAR BOBBY CARROT STİLİ BULMACA MOTORU
     // ============================================================
     function startMazeGame(container, levelNumber) {
         if (activeGameTimer) {
             clearInterval(activeGameTimer);
+            activeGameTimer = null;
         }
 
         const LEVELS = [
-            { level: 1, name: "Tavşanın Bahçesi", emoji: "🐰", size: 5, density: 0.18, scoreBase: 50, color: "#CAFFBF" },
-            { level: 2, name: "Minik Patika", emoji: "🌱", size: 5, density: 0.22, scoreBase: 70, color: "#CAFFBF" },
-            { level: 3, name: "Gizli Geçit", emoji: "🥕", size: 6, density: 0.24, scoreBase: 100, color: "#A0C4FF" },
-            { level: 4, name: "Yeşil Labirent", emoji: "🌲", size: 6, density: 0.26, scoreBase: 120, color: "#A0C4FF" },
-            { level: 5, name: "Büyük Macera", emoji: "🌟", size: 7, density: 0.28, scoreBase: 150, color: "#FFD6A5" },
-            { level: 6, name: "Gizemli Yol", emoji: "💎", size: 7, density: 0.30, scoreBase: 180, color: "#FFD6A5" },
-            { level: 7, name: "Karışık Patika", emoji: "🔥", size: 8, density: 0.32, scoreBase: 200, color: "#D8BBFF" },
-            { level: 8, name: "Kayıp Şehir", emoji: "🏛️", size: 8, density: 0.33, scoreBase: 250, color: "#D8BBFF" },
-            { level: 9, name: "Sihirli Geçit", emoji: "⚡", size: 9, density: 0.34, scoreBase: 300, color: "#FFC6FF" },
-            { level: 10, name: "Labirent Kralı", emoji: "👑", size: 10, density: 0.35, scoreBase: 400, color: "#FFC6FF" },
-            { level: 11, name: "Zindan Çıkışı", emoji: "🦇", size: 10, density: 0.36, scoreBase: 450, color: "#FCA311" },
-            { level: 12, name: "Karanlık Orman", emoji: "🐺", size: 11, density: 0.37, scoreBase: 500, color: "#FCA311" },
-            { level: 13, name: "Volkanın Kalbi", emoji: "🌋", size: 11, density: 0.38, scoreBase: 550, color: "#E63946" },
-            { level: 14, name: "Ateş Çemberi", emoji: "☄️", size: 11, density: 0.39, scoreBase: 600, color: "#E63946" },
-            { level: 15, name: "Buzul Mağarası", emoji: "🧊", size: 12, density: 0.40, scoreBase: 650, color: "#A8DADC" },
-            { level: 16, name: "Donmuş Nehir", emoji: "❄️", size: 12, density: 0.40, scoreBase: 700, color: "#A8DADC" },
-            { level: 17, name: "Uzay Yolu", emoji: "🚀", size: 12, density: 0.41, scoreBase: 750, color: "#457B9D" },
-            { level: 18, name: "Galaksi Sınırı", emoji: "🌌", size: 12, density: 0.41, scoreBase: 800, color: "#457B9D" },
-            { level: 19, name: "Zaman Tüneli", emoji: "⏳", size: 13, density: 0.42, scoreBase: 900, color: "#1D3557" },
-            { level: 20, name: "Sonsuz Labirent", emoji: "♾️", size: 13, density: 0.42, scoreBase: 1000, color: "#1D3557" }
+            {
+                level: 1,
+                name: "Çayır Bahçesi",
+                speed: 550,
+                scoreBase: 100,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", ".", ".", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", ".", ".", "S", ".", ".", ".", ".", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", "E2", ".", ".", ".", ".", ".", ".", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 2,
+                name: "Elma Tarlası",
+                speed: 500,
+                scoreBase: 140,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", "#", ".", ".", "E1", "#"],
+                    ["#", ".", "#", ".", ".", ".", "#", ".", "#"],
+                    ["#", ".", "#", ".", "S", ".", "#", ".", "#"],
+                    ["#", ".", ".", ".", "#", ".", ".", ".", "#"],
+                    ["#", "E2", ".", ".", "#", ".", ".", ".", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 3,
+                name: "Sihirli Bostan",
+                speed: 460,
+                scoreBase: 180,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", ".", ".", ".", "E1", "#"],
+                    ["#", "#", ".", "#", "#", "#", ".", "#", "#"],
+                    ["#", "S", ".", ".", "E2", ".", ".", "S", "#"],
+                    ["#", "#", ".", "#", "#", "#", ".", "#", "#"],
+                    ["#", ".", ".", ".", ".", ".", ".", ".", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 4,
+                name: "Gizemli Dolambaç",
+                speed: 420,
+                scoreBase: 220,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", ".", "#", ".", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", ".", ".", "#", ".", "#"],
+                    ["#", ".", ".", "S", ".", "#", ".", ".", ".", "#"],
+                    ["#", ".", "#", ".", ".", ".", "#", "#", ".", "#"],
+                    ["#", "E2", ".", ".", "#", ".", ".", "S", ".", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 5,
+                name: "Köstebek Tüneli",
+                speed: 390,
+                scoreBase: 260,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", ".", ".", ".", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", ".", "#"],
+                    ["#", ".", ".", "S", ".", ".", "S", ".", ".", "#"],
+                    ["#", ".", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", "E2", ".", ".", ".", ".", ".", ".", "E3", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 6,
+                name: "Gölge Bahçesi",
+                speed: 360,
+                scoreBase: 300,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", "#", ".", ".", ".", "E1", "#"],
+                    ["#", ".", "#", ".", "#", ".", "#", "#", ".", "#"],
+                    ["#", ".", ".", ".", "S", ".", ".", ".", ".", "#"],
+                    ["#", ".", "#", "#", ".", "#", ".", "#", ".", "#"],
+                    ["#", "E2", ".", ".", ".", "#", ".", ".", "E3", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 7,
+                name: "Hızlı Tilkiler",
+                speed: 330,
+                scoreBase: 350,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", "S", ".", ".", "S", ".", "E1", "#"],
+                    ["#", "#", ".", "#", "#", "#", "#", ".", "#", "#"],
+                    ["#", ".", ".", ".", ".", ".", ".", ".", ".", "#"],
+                    ["#", "#", ".", "#", "#", "#", "#", ".", "#", "#"],
+                    ["#", "E2", ".", ".", ".", ".", ".", ".", "E3", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 8,
+                name: "Büyük Av",
+                speed: 300,
+                scoreBase: 400,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", ".", ".", ".", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", ".", "#"],
+                    ["#", ".", "S", ".", ".", ".", ".", "S", ".", "#"],
+                    ["#", ".", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", "E2", ".", ".", ".", ".", ".", ".", "E3", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 9,
+                name: "Altın Bostan",
+                speed: 280,
+                scoreBase: 450,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", "S", ".", ".", "S", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", ".", "#"],
+                    ["#", ".", ".", ".", "E2", ".", ".", ".", ".", "#"],
+                    ["#", ".", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", "E3", ".", ".", "S", ".", ".", ".", "E4", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            },
+            {
+                level: 10,
+                name: "Havuç Avcısı Şampiyonu",
+                speed: 250,
+                scoreBase: 500,
+                map: [
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"],
+                    ["#", "P", ".", ".", "S", ".", ".", ".", "E1", "#"],
+                    ["#", ".", "#", "#", ".", "#", "#", ".", ".", "#"],
+                    ["#", ".", "S", ".", "E2", ".", ".", "S", ".", "#"],
+                    ["#", ".", ".", "#", "#", ".", "#", "#", ".", "#"],
+                    ["#", "E3", ".", ".", ".", ".", ".", ".", "E4", "#"],
+                    ["#", "#", "#", "#", "#", "#", "#", "#", "#", "#"]
+                ]
+            }
         ];
 
-        const cfg = LEVELS[levelNumber - 1];
-        const N = cfg.size;
-        let playerPos = { r: 0, c: 0 };
-        let targetPos = { r: N - 1, c: N - 1 };
-        let gameActive = true;
-        let timeElapsed = 0;
-        let lives = 3;
-        let grid = [];
-        
-        function generateSolvableMaze() {
-            while (true) {
-                grid = [];
-                for (let r = 0; r < N; r++) {
-                    grid.push([]);
-                    for (let c = 0; c < N; c++) {
-                        if ((r === 0 && c === 0) || (r === N - 1 && c === N - 1)) {
-                            grid[r].push(0);
-                        } else {
-                            grid[r].push(Math.random() < (cfg.density || 0.28) ? 1 : 0);
-                        }
-                    }
-                }
-                
-                let queue = [[0, 0]];
-                let visited = new Set(["0,0"]);
-                let solvable = false;
-                
-                while (queue.length > 0) {
-                    let [currR, currC] = queue.shift();
-                    if (currR === N - 1 && currC === N - 1) {
-                        solvable = true;
-                        break;
-                    }
-                    
-                    const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
-                    for (let [dr, dc] of dirs) {
-                        let nr = currR + dr;
-                        let nc = currC + dc;
-                        if (nr >= 0 && nr < N && nc >= 0 && nc < N && grid[nr][nc] === 0) {
-                            let key = `${nr},${nc}`;
-                            if (!visited.has(key)) {
-                                visited.add(key);
-                                queue.push([nr, nc]);
-                            }
-                        }
-                    }
-                }
-                
-                if (solvable) break;
-            }
-        }
-        
-        generateSolvableMaze();
+        const cfg = LEVELS[levelNumber - 1] || LEVELS[LEVELS.length - 1];
 
         const tabsHTML = LEVELS.map(l => {
             const isUnlocked = isLevelUnlocked(6, l.level);
-            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 4px 8px; font-size: 0.72rem; min-width: 32px; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
+            return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" style="padding: 5px 10px; font-size: 0.75rem; border-radius:12px; font-weight:700; border:none; background:' + (l.level === levelNumber ? 'var(--color-primary)' : 'rgba(0,0,0,0.06)') + '; color:' + (l.level === levelNumber ? '#fff' : 'inherit') + '; cursor:pointer; ' + (isUnlocked ? '' : 'opacity:0.5; cursor:not-allowed;') + '" ' + (isUnlocked ? '' : 'disabled') + '>' + (isUnlocked ? 'Svy ' + l.level : '🔒') + '</button>';
         }).join('');
 
+        let mapGrid = cfg.map.map(row => [...row]);
+        const rows = mapGrid.length;
+        const cols = mapGrid[0].length;
+
+        let startR = 0, startC = 0;
+        let pR = 0, pC = 0;
+        let lives = 3;
+        let score = 0;
+        let totalCarrots = 0;
+        let eatenCarrots = 0;
+        let timeElapsed = 0;
+        let powerTimer = 0;
+        let gameActive = true;
+        let enemyTimer = null;
+
+        // Düşman Nesneleri (Tilkiler, Köstebekler)
+        let enemies = [];
+
+        const ENEMY_EMOJIS = ["🦊", "🦡", "🐻", "🐺"];
+
+        // Haritayı Tara ve Nesneleri Kur
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = mapGrid[r][c];
+                if (cell === "P") {
+                    startR = r;
+                    startC = c;
+                    pR = r;
+                    pC = c;
+                    mapGrid[r][c] = " ";
+                } else if (cell === "." || cell === "S") {
+                    totalCarrots++;
+                } else if (cell.startsWith("E")) {
+                    const idx = enemies.length;
+                    const emoji = ENEMY_EMOJIS[idx % ENEMY_EMOJIS.length];
+                    enemies.push({
+                        id: cell,
+                        emoji: emoji,
+                        startR: r,
+                        startC: c,
+                        r: r,
+                        c: c
+                    });
+                    mapGrid[r][c] = "."; // Düşmanın altında havuç olsun
+                    totalCarrots++;
+                }
+            }
+        }
+
+        function renderHeartsHTML() {
+            let h = "";
+            for (let i = 0; i < 3; i++) {
+                h += i < lives ? "❤️" : "🖤";
+            }
+            return h;
+        }
+
         container.innerHTML = `
-            <div class="maze-game" style="text-align:center; padding:10px 0; user-select:none;">
-                <div class="level-tabs" style="display:flex; gap:4px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px; justify-content:start;">
+            <div class="bobby-maze-container" style="text-align:center; padding:4px 0; user-select:none; font-family:var(--font-main);">
+                <div class="level-tabs" style="display:flex; gap:6px; overflow-x:auto; margin-bottom:8px; padding-bottom:4px; justify-content:start;">
                     ${tabsHTML}
                 </div>
-                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:rgba(0,0,0,0.03); padding:8px 12px; border-radius:12px;">
-                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+
+                <div class="maze-hud" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:rgba(248,250,252,0.92); padding:8px 14px; border-radius:14px; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+                    <div style="text-align:left;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Bölüm ${cfg.level}</span>
+                        <div style="font-weight:800; font-size:1.02rem; color:var(--text-main);">${cfg.name}</div>
                     </div>
-                    <div class="game-lives" id="maze-lives" style="display:flex; gap:4px;">
-                        <!-- Hearts -->
-                    </div>
-                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                        Süre: <span id="maze-timer" style="color:#ef4444;">0</span>sn
+
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <!-- Güç Modu Durumu -->
+                        <div id="power-hud" style="display:${powerTimer > 0 ? 'flex' : 'none'}; align-items:center; gap:4px; font-weight:800; background:#fef08a; padding:5px 9px; border-radius:12px; border:1px solid #fde047; font-size:0.8rem; color:#854d0e;">
+                            ⚡ <span id="power-timer">${powerTimer}s</span>
+                        </div>
+
+                        <!-- Havuç Sayacı -->
+                        <div style="display:flex; align-items:center; gap:4px; font-weight:800; color:#d97706; background:#fef3c7; padding:5px 9px; border-radius:12px; border:1px solid #fde68a; font-size:0.85rem;">
+                            <span>🥕</span> <span id="muncher-carrots">0</span>/${totalCarrots}
+                        </div>
+
+                        <!-- Canlar -->
+                        <div style="display:flex; align-items:center; gap:3px; font-weight:800; background:#fee2e2; padding:5px 9px; border-radius:12px; border:1px solid #fca5a5; font-size:0.85rem;">
+                            <span id="bobby-lives">${renderHeartsHTML()}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="maze-board-wrapper" style="padding:10px; background:rgba(0,0,0,0.02); border-radius:20px; display:inline-block; border:2px solid rgba(0,0,0,0.05);">
-                    <div class="maze-board" style="display:grid; grid-template-columns:repeat(${N}, 1fr); grid-template-rows:repeat(${N}, 1fr); gap:4px; width:280px; height:280px; margin:0 auto;">
-                        ${Array.from({ length: N * N }).map((_, idx) => {
-                            const r = Math.floor(idx / N);
-                            const c = idx % N;
-                            let cellBg = "var(--bg-card)";
-                            let content = "";
-                            
-                            if (grid[r][c] === 1) {
-                                cellBg = "#374151";
-                            } else if (r === playerPos.r && c === playerPos.c) {
-                                content = "🐰";
-                            } else if (r === targetPos.r && c === targetPos.c) {
-                                content = "🥕";
-                            }
-                            
-                            return '<div class="maze-cell" data-r="' + r + '" data-c="' + c + '" style="background:' + cellBg + '; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; border: 1px solid rgba(0,0,0,0.03); aspect-ratio:1; box-sizing:border-box; width:100%; height:100%; overflow:hidden;">' + content + '</div>';
-                        }).join('')}
-                    </div>
+                <div id="bobby-board" style="display:grid; grid-template-columns:repeat(${cols}, 1fr); gap:3px; max-width:360px; margin:0 auto 10px; background:#cbd5e1; padding:8px; border-radius:18px; border:3px solid #94a3b8; box-shadow:0 8px 24px rgba(0,0,0,0.08); transition: background 0.2s;">
                 </div>
 
-                <div class="maze-controls" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; max-width:180px; margin:15px auto 5px;">
-                    <div></div>
-                    <button class="btn btn-primary btn-icon" id="maze-up" style="width:48px; height:48px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-up"></i></button>
-                    <div></div>
-                    <button class="btn btn-primary btn-icon" id="maze-left" style="width:48px; height:48px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-left"></i></button>
-                    <button class="btn btn-success btn-icon" id="maze-center" style="width:48px; height:48px; border-radius:50%; margin:0 auto; cursor:default; pointer-events:none;"><i data-lucide="smile"></i></button>
-                    <button class="btn btn-primary btn-icon" id="maze-right" style="width:48px; height:48px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-right"></i></button>
-                    <div></div>
-                    <button class="btn btn-primary btn-icon" id="maze-down" style="width:48px; height:48px; border-radius:50%; margin:0 auto;"><i data-lucide="chevron-down"></i></button>
-                    <div></div>
+                <div class="dpad-wrapper" style="display:flex; justify-content:center; align-items:center; gap:16px; margin-top:4px;">
+                    <button id="btn-reset-level" style="background:#f1f5f9; color:#475569; border:2px solid #cbd5e1; padding:8px 12px; border-radius:12px; font-weight:700; cursor:pointer; font-size:0.82rem; display:flex; align-items:center; gap:4px;">
+                        🔄 Yeniden Başlat
+                    </button>
+
+                    <div class="dpad-grid" style="display:inline-grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap:6px;">
+                        <div></div>
+                        <button class="btn-dpad" id="btn-up" style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; border-radius:12px; font-size:1.2rem; cursor:pointer; box-shadow:0 4px 10px rgba(79,70,229,0.3);">⬆️</button>
+                        <div></div>
+                        <button class="btn-dpad" id="btn-left" style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; border-radius:12px; font-size:1.2rem; cursor:pointer; box-shadow:0 4px 10px rgba(79,70,229,0.3);">⬅️</button>
+                        <div></div>
+                        <button class="btn-dpad" id="btn-right" style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; border-radius:12px; font-size:1.2rem; cursor:pointer; box-shadow:0 4px 10px rgba(79,70,229,0.3);">➡️</button>
+                        <div></div>
+                        <button class="btn-dpad" id="btn-down" style="background:linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; border-radius:12px; font-size:1.2rem; cursor:pointer; box-shadow:0 4px 10px rgba(79,70,229,0.3);">⬇️</button>
+                        <div></div>
+                    </div>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         lucide.createIcons();
-        updateLivesDisplay();
+
+        function cleanupEvents() {
+            gameActive = false;
+            window.removeEventListener("keydown", handleKeyDown);
+            if (activeGameTimer) { clearInterval(activeGameTimer); activeGameTimer = null; }
+            if (enemyTimer) { clearInterval(enemyTimer); enemyTimer = null; }
+        }
 
         container.querySelectorAll(".level-tab").forEach(tab => {
             tab.addEventListener("click", () => {
@@ -2765,212 +3501,341 @@ document.addEventListener("DOMContentLoaded", () => {
                 const next = parseInt(tab.dataset.level);
                 if (next === levelNumber) return;
                 playSound('click');
-                cleanUp();
+                cleanupEvents();
                 startMazeGame(container, next);
             });
         });
 
-        const handleKeyDown = (e) => {
-            if (!gameActive) return;
-            let dr = 0, dc = 0;
-            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") dr = -1;
-            else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") dr = 1;
-            else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") dc = -1;
-            else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") dc = 1;
-            
-            if (dr !== 0 || dc !== 0) {
-                e.preventDefault();
-                movePlayer(dr, dc);
-            }
-        };
-        document.addEventListener("keydown", handleKeyDown);
-
-        container.querySelector("#maze-up").addEventListener("click", () => movePlayer(-1, 0));
-        container.querySelector("#maze-down").addEventListener("click", () => movePlayer(1, 0));
-        container.querySelector("#maze-left").addEventListener("click", () => movePlayer(0, -1));
-        container.querySelector("#maze-right").addEventListener("click", () => movePlayer(0, 1));
-
-        function updateLivesDisplay() {
-            const livesEl = container.querySelector("#maze-lives");
-            if (!livesEl) return;
-            livesEl.innerHTML = "";
-            for (let i = 0; i < 3; i++) {
-                const heart = document.createElement("i");
-                heart.style.width = "16px";
-                heart.style.height = "16px";
-                heart.setAttribute("data-lucide", "heart");
-                if (i < lives) {
-                    heart.style.fill = "#ef4444";
-                    heart.style.color = "#ef4444";
-                } else {
-                    heart.style.fill = "none";
-                    heart.style.color = "var(--text-muted)";
-                    heart.style.opacity = "0.3";
-                }
-                livesEl.appendChild(heart);
-            }
-            lucide.createIcons();
-        }
-
-        function movePlayer(dr, dc) {
-            if (!gameActive) return;
-            
-            const nr = playerPos.r + dr;
-            const nc = playerPos.c + dc;
-            
-            if (nr >= 0 && nr < N && nc >= 0 && nc < N && grid[nr][nc] === 0) {
-                const oldCell = container.querySelector(`.maze-cell[data-r="${playerPos.r}"][data-c="${playerPos.c}"]`);
-                if (oldCell) oldCell.innerHTML = "";
-                
-                playerPos.r = nr;
-                playerPos.c = nc;
-                
-                const newCell = container.querySelector(`.maze-cell[data-r="${playerPos.r}"][data-c="${playerPos.c}"]`);
-                if (newCell) {
-                    newCell.innerHTML = "🐰";
-                }
-                
+        const btnReset = container.querySelector("#btn-reset-level");
+        if (btnReset) {
+            btnReset.addEventListener("click", () => {
                 playSound('click');
-                
-                if (playerPos.r === targetPos.r && playerPos.c === targetPos.c) {
-                    endGame(true);
-                }
-            } else {
-                lives--;
-                updateLivesDisplay();
-                playSound('locked');
-                
-                const board = container.querySelector(".maze-board");
-                if (board) {
-                    board.style.animation = "shake 0.3s ease";
-                    setTimeout(() => { board.style.animation = ""; }, 300);
-                }
-
-                if (lives <= 0) {
-                    endGame(false);
-                }
-            }
+                cleanupEvents();
+                startMazeGame(container, levelNumber);
+            });
         }
 
+        const boardEl = container.querySelector("#bobby-board");
+
+        function renderBoard() {
+            if (!boardEl) return;
+            let html = "";
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const tile = mapGrid[r][c];
+                    const isPlayer = (r === pR && c === pC);
+                    const enemyHere = enemies.find(e => e.r === r && e.c === c);
+
+                    let bg = "#ffffff";
+                    let border = "1px solid #e2e8f0";
+                    let content = "";
+
+                    if (tile === "#") {
+                        bg = "#475569";
+                        border = "1px solid #334155";
+                    } else if (tile === ".") {
+                        content = "<span style='font-size:0.85rem; opacity:0.9;'>🥕</span>";
+                    } else if (tile === "S") {
+                        bg = "#fef08a";
+                        border = "1px solid #fde047";
+                        content = "<span style='font-size:1.15rem; animation:pulse 0.8s infinite;'>🌟</span>";
+                    }
+
+                    if (enemyHere && !isPlayer) {
+                        content = powerTimer > 0 ? "😱" : enemyHere.emoji;
+                        bg = powerTimer > 0 ? "#bfdbfe" : "#fee2e2";
+                    }
+
+                    if (isPlayer) {
+                        bg = powerTimer > 0 ? "#fef08a" : "#e0e7ff";
+                        content = `<img src="assets/images/pixar_heads/rabbit.jpg" style="width:88%; height:88%; border-radius:50%; object-fit:cover; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.25)); transform:scale(1.05); z-index:2;" />`;
+                    }
+
+                    html += `<div class="maze-cell" data-r="${r}" data-c="${c}" style="aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:${bg}; border:${border}; border-radius:6px; font-size:${cols > 8 ? '0.9rem' : '1.15rem'}; box-shadow:inset 0 1px 3px rgba(255,255,255,0.8); cursor:pointer; position:relative;">${content}</div>`;
+                }
+            }
+            boardEl.innerHTML = html;
+
+            boardEl.querySelectorAll(".maze-cell").forEach(cell => {
+                cell.addEventListener("click", () => {
+                    const cR = parseInt(cell.dataset.r);
+                    const cC = parseInt(cell.dataset.c);
+                    const dR = cR - pR;
+                    const dC = cC - pC;
+
+                    if (Math.abs(dR) + Math.abs(dC) === 1) {
+                        tryStep(dR, dC);
+                    } else if (Math.abs(dR) > 0 && dC === 0) {
+                        tryStep(Math.sign(dR), 0);
+                    } else if (Math.abs(dC) > 0 && dR === 0) {
+                        tryStep(0, Math.sign(dC));
+                    }
+                });
+            });
+        }
+
+        renderBoard();
+
+        // 1 Saniyelik Oyun Zamanlayıcısı (Süre ve Güç Modu Geri Sayımı)
         activeGameTimer = setInterval(() => {
+            if (!gameActive) return;
             timeElapsed++;
-            const timerEl = container.querySelector("#maze-timer");
-            if (timerEl) timerEl.innerText = timeElapsed;
-            else {
-                document.removeEventListener("keydown", handleKeyDown);
-                clearInterval(activeGameTimer);
+            const tEl = container.querySelector("#bobby-timer");
+            if (tEl) tEl.innerText = timeElapsed;
+
+            if (powerTimer > 0) {
+                powerTimer--;
+                const pEl = container.querySelector("#power-timer");
+                const pHud = container.querySelector("#power-hud");
+                if (pEl) pEl.innerText = powerTimer + "s";
+                if (powerTimer <= 0 && pHud) {
+                    pHud.style.display = "none";
+                }
+                renderBoard();
             }
         }, 1000);
 
-        function cleanUp() {
-            document.removeEventListener("keydown", handleKeyDown);
-            if (activeGameTimer) {
-                clearInterval(activeGameTimer);
-                activeGameTimer = null;
-            }
-        }
+        // Düşman Yapay Zeka Hareketi (Pac-Man Düşman Motoru)
+        enemyTimer = setInterval(() => {
+            if (!gameActive) return;
 
-        function endGame(isWin) {
-            gameActive = false;
-            cleanUp();
+            enemies.forEach(enemy => {
+                const possibleMoves = [];
+                const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
 
-            if (isWin) {
-                unlockNextLevel(6, levelNumber);
-                playSound('success');
+                dirs.forEach(([dr, dc]) => {
+                    const nR = enemy.r + dr;
+                    const nC = enemy.c + dc;
+                    if (nR >= 0 && nR < rows && nC >= 0 && nC < cols) {
+                        if (mapGrid[nR][nC] !== "#") {
+                            possibleMoves.push({ r: nR, c: nC });
+                        }
+                    }
+                });
 
-                const scoreAwarded = cfg.scoreBase + Math.max(0, 200 - timeElapsed * 4);
-                const starsAwarded = timeElapsed < 15 ? 25 : (timeElapsed < 30 ? 15 : 10);
-
-                const ach = window.achievementsData;
-                ach.userStats.stars += starsAwarded;
-                ach.userStats.totalScore += scoreAwarded;
-                ach.userStats.completedGames += 1;
-
-                const task1 = ach.dailyTasks.find(t => t.id === 1);
-                if (task1 && !task1.completed) {
-                    task1.completed = true;
-                    ach.userStats.stars += task1.reward;
+                if (possibleMoves.length > 0) {
+                    // Rastgele veya Tavşana doğru adım at
+                    const choice = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                    enemy.r = choice.r;
+                    enemy.c = choice.c;
                 }
 
-                const done = ach.dailyTasks.filter(t => t.completed).length;
-                ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+                // Çarpışma Kontrolü
+                checkCollision(enemy);
+            });
 
-                setTimeout(() => {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🥕🐰🏆</div>
-                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Labirent Kaşifi!</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
-                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Labirenti <strong>${timeElapsed} saniyede</strong> bitirdin!
-                            </p>
-                            
-                            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
-                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-yellow); border:2px solid #D97706; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#D97706;">+${starsAwarded}</div>
-                                    <div style="font-size:0.7rem; font-weight:700; color:#78350F;">YILDIZ</div>
-                                </div>
-                                <div style="padding:12px 16px; border-radius:14px; background:var(--pastel-green); border:2px solid #166534; text-align:center; min-width:90px;">
-                                    <div style="font-size:1.5rem; font-family:var(--font-heading); color:#166534;">+${scoreAwarded}</div>
-                                    <div style="font-size:0.7rem; font-weight:700; color:#14532D;">PUAN</div>
-                                </div>
-                            </div>
+            renderBoard();
+        }, cfg.speed);
 
-                            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                ${levelNumber < 20 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
-                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
-                            </div>
-                        </div>
-                    `;
+        // Çarpışma Kontrolü (Düşmana Dokunma)
+        function checkCollision(enemy) {
+            if (enemy.r === pR && enemy.c === pC) {
+                if (powerTimer > 0) {
+                    // Güç Modu: Düşman Yenir!
+                    score += 100;
+                    playSound('pop');
+                    enemy.r = enemy.startR;
+                    enemy.c = enemy.startC;
+                } else {
+                    // Normal Mod: Can Kaybı!
+                    lives--;
+                    playSound('locked');
 
-                    container.querySelector("#btn-replay").addEventListener("click", () => {
-                        playSound('click');
-                        startMazeGame(container, levelNumber);
-                    });
-                    if (levelNumber < 20) {
-                        container.querySelector("#btn-next-level").addEventListener("click", () => {
-                            playSound('click');
-                            startMazeGame(container, levelNumber + 1);
-                        });
+                    const lEl = container.querySelector("#bobby-lives");
+                    if (lEl) lEl.innerHTML = renderHeartsHTML();
+
+                    if (boardEl) {
+                        boardEl.style.background = "#fca5a5";
+                        setTimeout(() => { if (boardEl) boardEl.style.background = "#cbd5e1"; }, 300);
                     }
-                    container.querySelector("#btn-finish-win").addEventListener("click", () => {
-                        playSound('click');
-                        closeModal();
-                        renderAchievements();
-                    });
-                }, 600);
-            } else {
-                lockGame(6);
-                playSound('locked');
-                
-                setTimeout(() => {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢🐰💥</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Canların Tükendi!</h2>
-                            <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Duvarlara çok fazla çarptın ve seviyeyi tamamlayamadın. 1 global can kaybettin!
-                            </p>
-                            
-                            <div style="display:flex; gap:10px; justify-content:center;">
-                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
-                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
-                            </div>
-                        </div>
-                    `;
 
-                    container.querySelector("#btn-replay-fail").addEventListener("click", () => {
-                        playSound('click');
-                        startMazeGame(container, levelNumber);
-                    });
-                    container.querySelector("#btn-close-fail").addEventListener("click", () => {
-                        playSound('click');
-                        closeModal();
-                    });
-                }, 600);
+                    if (lives <= 0) {
+                        triggerGameOver();
+                        return;
+                    }
+
+                    // Tavşan başlangıç noktasına döner
+                    pR = startR;
+                    pC = startC;
+                }
             }
         }
+
+        function tryStep(dr, dc) {
+            if (!gameActive) return false;
+
+            const nR = pR + dr;
+            const nC = pC + dc;
+
+            if (nR < 0 || nR >= rows || nC < 0 || nC >= cols) return false;
+
+            const targetTile = mapGrid[nR][nC];
+
+            if (targetTile === "#") {
+                playSound('locked');
+                return false;
+            }
+
+            pR = nR;
+            pC = nC;
+            playSound('click');
+
+            // Havuç Yeme 🥕
+            if (targetTile === ".") {
+                mapGrid[pR][pC] = " ";
+                eatenCarrots++;
+                score += 10;
+                playSound('pop');
+
+                const cEl = container.querySelector("#muncher-carrots");
+                if (cEl) cEl.innerText = eatenCarrots;
+            }
+            // Süper Havuç Yeme 🌟 (Güç Modu)
+            else if (targetTile === "S") {
+                mapGrid[pR][pC] = " ";
+                eatenCarrots++;
+                score += 50;
+                powerTimer = 7;
+                playSound('success');
+
+                const cEl = container.querySelector("#muncher-carrots");
+                if (cEl) cEl.innerText = eatenCarrots;
+
+                const pHud = container.querySelector("#power-hud");
+                const pEl = container.querySelector("#power-timer");
+                if (pHud) pHud.style.display = "flex";
+                if (pEl) pEl.innerText = "7s";
+            }
+
+            // Tavşanın gittiği hücrede düşman var mı kontrol et
+            enemies.forEach(enemy => checkCollision(enemy));
+
+            renderBoard();
+
+            // Tüm Havuçlar Yenince Bölüm Geçilir! 🏆
+            if (eatenCarrots >= totalCarrots) {
+                triggerVictory();
+                return true;
+            }
+
+            return true;
+        }
+
+        function triggerGameOver() {
+            cleanupEvents();
+            playSound('fail');
+
+            container.innerHTML = `
+                <div style="text-align:center; padding:24px 12px; font-family:var(--font-main);">
+                    <div style="font-size:4.5rem; margin-bottom:12px; animation: pulse 1s infinite;">💔🦊</div>
+                    <h2 style="font-size:1.8rem; color:#ef4444; font-weight:800; margin-bottom:8px;">Canın Bitti!</h2>
+                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:20px;">
+                        Tarladaki hayvanlara yakalandın. Pes etme, tekrar dene!
+                    </p>
+
+                    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="btn-maze-retry" style="padding:12px 24px; font-weight:800; font-size:1rem; border-radius:14px; background:linear-gradient(135deg, #ef4444, #dc2626); color:#fff; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(239,68,68,0.3);">
+                            🔄 Tekrar Dene
+                        </button>
+                        <button class="btn btn-locked" id="btn-maze-close" style="padding:12px 20px; font-weight:700; border-radius:14px; background:#cbd5e1; color:#475569; border:none; cursor:pointer;">
+                            ❌ Çıkış
+                        </button>
+                    </div>
+                </div>`;
+
+            const btnRetry = container.querySelector("#btn-maze-retry");
+            if (btnRetry) {
+                btnRetry.addEventListener("click", () => {
+                    playSound('click');
+                    startMazeGame(container, levelNumber);
+                });
+            }
+
+            const btnClose = container.querySelector("#btn-maze-close");
+            if (btnClose) {
+                btnClose.addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                });
+            }
+        }
+
+        function triggerVictory() {
+            cleanupEvents();
+            playSound('win');
+            unlockNextLevel(6, levelNumber);
+
+            const finalScore = cfg.scoreBase + score + lives * 50;
+            const hasNext = levelNumber < 10;
+
+            container.innerHTML = `
+                <div style="text-align:center; padding:20px 10px; font-family:var(--font-main);">
+                    <div style="font-size:4.2rem; margin-bottom:12px; animation: bounce-loop 1.5s infinite;">🎉🥕🏆</div>
+                    <h2 style="font-size:1.7rem; color:var(--color-primary); margin-bottom:6px; font-weight:800;">Harika! Tüm Havuçları Topladın!</h2>
+                    <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
+                        <strong>${cfg.name}</strong> tarlasındaki tüm havuçları başarıyla yedin!
+                    </p>
+                    
+                    <div style="display:flex; justify-content:center; gap:16px; margin-bottom:22px; background:rgba(248,250,252,0.95); padding:14px 20px; border-radius:18px; border:1px solid #cbd5e1; box-shadow:0 6px 16px rgba(0,0,0,0.04);">
+                        <div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Süre</div><div style="font-weight:800; font-size:1.25rem; color:#6366f1;">${timeElapsed}s</div></div>
+                        <div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Toplanan Havuç</div><div style="font-weight:800; font-size:1.25rem; color:#d97706;">${eatenCarrots}/${totalCarrots}</div></div>
+                        <div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">Toplam Puan</div><div style="font-weight:800; font-size:1.25rem; color:#166534;">+${finalScore}</div></div>
+                    </div>
+
+                    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                        ${hasNext ? `<button class="btn btn-primary" id="btn-maze-next-level" style="padding:12px 24px; font-weight:800; font-size:1rem; border-radius:14px; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.3); cursor:pointer;">Sonraki Seviye (Svy ${levelNumber + 1}) ➔</button>` : ''}
+                        <button class="btn btn-success" id="btn-maze-replay" style="padding:12px 20px; font-weight:700; border-radius:14px; background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; cursor:pointer;">🔄 Tekrar Oyna</button>
+                        <button class="btn btn-locked" id="btn-maze-close" style="padding:12px 20px; font-weight:700; border-radius:14px; background:#f87171; color:#fff; border:none; cursor:pointer;">❌ Kapat</button>
+                    </div>
+                </div>`;
+
+            if (hasNext) {
+                const btnNext = container.querySelector("#btn-maze-next-level");
+                if (btnNext) {
+                    btnNext.addEventListener("click", () => {
+                        playSound('click');
+                        startMazeGame(container, levelNumber + 1);
+                    });
+                }
+            }
+
+            const btnReplay = container.querySelector("#btn-maze-replay");
+            if (btnReplay) {
+                btnReplay.addEventListener("click", () => {
+                    playSound('click');
+                    startMazeGame(container, levelNumber);
+                });
+            }
+
+            const btnClose = container.querySelector("#btn-maze-close");
+            if (btnClose) {
+                btnClose.addEventListener("click", () => {
+                    playSound('click');
+                    closeModal();
+                });
+            }
+        }
+
+        const btnUp = container.querySelector("#btn-up");
+        const btnDown = container.querySelector("#btn-down");
+        const btnLeft = container.querySelector("#btn-left");
+        const btnRight = container.querySelector("#btn-right");
+
+        if (btnUp) btnUp.addEventListener("click", () => tryStep(-1, 0));
+        if (btnDown) btnDown.addEventListener("click", () => tryStep(1, 0));
+        if (btnLeft) btnLeft.addEventListener("click", () => tryStep(0, -1));
+        if (btnRight) btnRight.addEventListener("click", () => tryStep(0, 1));
+
+        function handleKeyDown(e) {
+            if (!gameActive) return;
+            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") { e.preventDefault(); tryStep(-1, 0); }
+            else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { e.preventDefault(); tryStep(1, 0); }
+            else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); tryStep(0, -1); }
+            else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); tryStep(0, 1); }
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
     }
     // ============================================================
     // GÖLGE EŞLEME (GÖRSEL ALGI) OYUN MOTORU
@@ -3191,6 +4056,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -3653,6 +4523,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -3996,6 +4871,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -4020,7 +4900,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                                 <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                ${levelNumber < 10 ? '<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ' + (levelNumber + 1) + '</button>' : ''}
+                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
                                 <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
                             </div>
                         </div>
@@ -4072,34 +4952,209 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     }
+
     // ============================================================
-    // RİTMİK HAFIZA (HAFIZA/DİKKAT) OYUN MOTORU
+    // RİTMİK HAFIZA (HAFIZA/DİKKAT) OYUN MOTORU - SİMLİ & PARILTILI 3D KARELER
     // ============================================================
     function startRhythmicMemoryGame(container, levelNumber) {
         if (activeGameTimer) {
             clearInterval(activeGameTimer);
+            activeGameTimer = null;
         }
 
+        const render3DCrystalGemSVG = (t) => {
+            if (t.id === 0) {
+                // 3D Pembe Elmas (Pink Diamond)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="pinkCore" cx="50%" cy="35%" r="60%">
+                            <stop offset="0%" stop-color="#ffe4e6"/>
+                            <stop offset="50%" stop-color="#fb7185"/>
+                            <stop offset="100%" stop-color="#be123c"/>
+                        </radialGradient>
+                        <linearGradient id="facetTop" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="30,20 70,20 90,45 50,85 10,45" fill="url(#pinkCore)" stroke="#ffe4e6" stroke-width="2.5"/>
+                    <polygon points="30,20 50,45 10,45" fill="rgba(255,255,255,0.4)"/>
+                    <polygon points="70,20 50,45 90,45" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="30,20 70,20 50,45" fill="url(#facetTop)"/>
+                    <polygon points="50,45 90,45 50,85" fill="rgba(0,0,0,0.15)"/>
+                    <polygon points="50,45 10,45 50,85" fill="rgba(255,255,255,0.25)"/>
+                    <circle cx="35" cy="28" r="3" fill="#ffffff"/>
+                    <path d="M 35 20 L 35 36 M 27 28 L 43 28" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>`;
+            }
+            if (t.id === 1) {
+                // 3D Safir Mavi Kristal (Sapphire Crystal)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="blueCore" cx="45%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#bfdbfe"/>
+                            <stop offset="55%" stop-color="#3b82f6"/>
+                            <stop offset="100%" stop-color="#1e3a8a"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,12 82,32 82,68 50,88 18,68 18,32" fill="url(#blueCore)" stroke="#93c5fd" stroke-width="3"/>
+                    <polygon points="50,12 82,32 50,45" fill="rgba(255,255,255,0.45)"/>
+                    <polygon points="18,32 50,12 50,45" fill="rgba(255,255,255,0.6)"/>
+                    <polygon points="18,32 18,68 50,45" fill="rgba(255,255,255,0.25)"/>
+                    <polygon points="82,32 82,68 50,45" fill="rgba(0,0,0,0.2)"/>
+                    <polygon points="18,68 50,88 50,45" fill="rgba(255,255,255,0.15)"/>
+                    <polygon points="82,68 50,88 50,45" fill="rgba(0,0,0,0.3)"/>
+                    <circle cx="34" cy="26" r="3" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 2) {
+                // 3D Altın Yıldız Kristal (Gold Star Crystal)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="goldCore" cx="45%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="55%" stop-color="#eab308"/>
+                            <stop offset="100%" stop-color="#854d0e"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M 50 10 L 63 35 L 90 38 L 70 57 L 76 85 L 50 70 L 24 85 L 30 57 L 10 38 L 37 35 Z" fill="url(#goldCore)" stroke="#fef08a" stroke-width="2.5"/>
+                    <path d="M 50 10 L 50 70 L 63 35 Z M 50 70 L 76 85 L 70 57 Z M 50 70 L 24 85 L 30 57 Z" fill="rgba(255,255,255,0.35)"/>
+                    <path d="M 50 10 L 50 70 L 37 35 Z M 50 70 L 10 38 L 30 57 Z" fill="rgba(255,255,255,0.55)"/>
+                    <circle cx="50" cy="35" r="3" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 3) {
+                // 3D Zümrüt (Emerald Cut Gemstone)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="emCore" cx="45%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#a7f3d0"/>
+                            <stop offset="55%" stop-color="#10b981"/>
+                            <stop offset="100%" stop-color="#064e3b"/>
+                        </radialGradient>
+                    </defs>
+                    <rect x="18" y="22" width="64" height="56" rx="8" fill="url(#emCore)" stroke="#6ee7b7" stroke-width="3"/>
+                    <rect x="28" y="30" width="44" height="40" rx="4" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.5"/>
+                    <line x1="18" y1="22" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                    <line x1="82" y1="22" x2="72" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                    <line x1="18" y1="78" x2="28" y2="70" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                    <line x1="82" y1="78" x2="72" y2="70" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                    <polygon points="18,22 82,22 72,30 28,30" fill="rgba(255,255,255,0.4)"/>
+                    <polygon points="18,22 28,30 28,70 18,78" fill="rgba(255,255,255,0.25)"/>
+                </svg>`;
+            }
+            if (t.id === 4) {
+                // 3D Galaksi Mor Kristal Küre (Amethyst Sphere)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="purpCore" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#f5d0fe"/>
+                            <stop offset="45%" stop-color="#c084fc"/>
+                            <stop offset="80%" stop-color="#7e22ce"/>
+                            <stop offset="100%" stop-color="#3b0764"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="38" fill="url(#purpCore)" stroke="#e9d5ff" stroke-width="3"/>
+                    <ellipse cx="40" cy="35" rx="16" ry="8" fill="rgba(255,255,255,0.45)" transform="rotate(-30 40 35)"/>
+                    <circle cx="32" cy="28" r="4" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 5) {
+                // 3D Kehribar Ateş Kristali (Amber Fire Crystal)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="ambCore" cx="45%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffedd5"/>
+                            <stop offset="55%" stop-color="#f97316"/>
+                            <stop offset="100%" stop-color="#7c2d12"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,10 78,35 68,85 32,85 22,35" fill="url(#ambCore)" stroke="#fed7aa" stroke-width="3"/>
+                    <polygon points="50,10 78,35 50,48" fill="rgba(255,255,255,0.5)"/>
+                    <polygon points="50,10 22,35 50,48" fill="rgba(255,255,255,0.7)"/>
+                    <polygon points="22,35 32,85 50,48" fill="rgba(255,255,255,0.2)"/>
+                    <circle cx="36" cy="26" r="3" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 6) {
+                // 3D Turkuaz Su Kristali (Turquoise Tear Drop Gem)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="turqCore" cx="45%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#cffafe"/>
+                            <stop offset="55%" stop-color="#06b6d4"/>
+                            <stop offset="100%" stop-color="#164e63"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M 50 12 C 75 45 82 65 68 82 C 54 94 36 90 24 76 C 14 60 25 45 50 12 Z" fill="url(#turqCore)" stroke="#a5f3fc" stroke-width="3"/>
+                    <path d="M 50 12 C 60 35 65 50 50 78 Z" fill="rgba(255,255,255,0.4)"/>
+                    <circle cx="42" cy="35" r="3.5" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 7) {
+                // 3D Gül Altın Çiçek Kristal (Rose Gold Gem)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <radialGradient id="roseCore" cx="45%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#fce7f3"/>
+                            <stop offset="55%" stop-color="#f43f5e"/>
+                            <stop offset="100%" stop-color="#881337"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M 50 12 L 62 30 L 85 30 L 72 48 L 82 70 L 60 65 L 50 88 L 40 65 L 18 70 L 28 48 L 15 30 L 38 30 Z" fill="url(#roseCore)" stroke="#fbcfe8" stroke-width="3"/>
+                    <circle cx="50" cy="48" r="16" fill="rgba(255,255,255,0.35)"/>
+                    <circle cx="44" cy="42" r="3" fill="#ffffff"/>
+                </svg>`;
+            }
+            if (t.id === 8) {
+                // 3D Gökkuşağı Prizma Pırlanta (Rainbow Prism Crystal)
+                return `<svg viewBox="0 0 100 100" style="width:85%; height:85%; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.35));">
+                    <defs>
+                        <linearGradient id="rbCore" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#f43f5e"/>
+                            <stop offset="25%" stop-color="#f59e0b"/>
+                            <stop offset="50%" stop-color="#10b981"/>
+                            <stop offset="75%" stop-color="#3b82f6"/>
+                            <stop offset="100%" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 88,40 70,88 30,88 12,40" fill="url(#rbCore)" stroke="#ffffff" stroke-width="3.5"/>
+                    <polygon points="50,10 88,40 50,50" fill="rgba(255,255,255,0.45)"/>
+                    <polygon points="50,10 12,40 50,50" fill="rgba(255,255,255,0.65)"/>
+                    <polygon points="12,40 30,88 50,50" fill="rgba(255,255,255,0.25)"/>
+                    <circle cx="38" cy="28" r="4" fill="#ffffff"/>
+                </svg>`;
+            }
+            return '';
+        };
+
+        const SPARKLE_TILES = [
+            { id: 0, name: "Elmas Pembe", bg: "linear-gradient(135deg, #f43f5e, #be123c)", border: "#fda4af", glow: "#f43f5e", shadow: "rgba(244, 63, 94, 0.45)" },
+            { id: 1, name: "Safir Mavi", bg: "linear-gradient(135deg, #3b82f6, #1d4ed8)", border: "#93c5fd", glow: "#3b82f6", shadow: "rgba(59, 130, 246, 0.45)" },
+            { id: 2, name: "Altın Işıltı", bg: "linear-gradient(135deg, #eab308, #ca8a04)", border: "#fef08a", glow: "#eab308", shadow: "rgba(234, 179, 8, 0.45)" },
+            { id: 3, name: "Zümrüt Yeşil", bg: "linear-gradient(135deg, #10b981, #047857)", border: "#6ee7b7", glow: "#10b981", shadow: "rgba(16, 185, 129, 0.45)" },
+            { id: 4, name: "Galaksi Mor", bg: "linear-gradient(135deg, #a855f7, #6b21a8)", border: "#e9d5ff", glow: "#a855f7", shadow: "rgba(168, 85, 247, 0.45)" },
+            { id: 5, name: "Kehribar Turuncu", bg: "linear-gradient(135deg, #f97316, #c2410c)", border: "#fed7aa", glow: "#f97316", shadow: "rgba(249, 115, 22, 0.45)" },
+            { id: 6, name: "Turkuaz Kristal", bg: "linear-gradient(135deg, #06b6d4, #0e7490)", border: "#a5f3fc", glow: "#06b6d4", shadow: "rgba(6, 182, 212, 0.45)" },
+            { id: 7, name: "Gül Altın", bg: "linear-gradient(135deg, #ec4899, #9d174d)", border: "#fbcfe8", glow: "#ec4899", shadow: "rgba(236, 72, 153, 0.45)" },
+            { id: 8, name: "Gökkuşağı Pırıltı", bg: "linear-gradient(135deg, #8b5cf6, #ec4899, #f59e0b)", border: "#ffffff", glow: "#8b5cf6", shadow: "rgba(139, 92, 246, 0.5)" }
+        ];
+
         const LEVELS = [
-            { level: 1, name: "Basit Ritimler", targetLength: 4, speed: 700, color: "#CAFFBF" },
-            { level: 2, name: "Minik Ritimler", targetLength: 4, speed: 650, color: "#CAFFBF" },
-            { level: 3, name: "Melodik Kulak", targetLength: 5, speed: 600, color: "#A0C4FF" },
-            { level: 4, name: "Ritim Kulak", targetLength: 5, speed: 550, color: "#A0C4FF" },
-            { level: 5, name: "Ritim Takibi", targetLength: 6, speed: 500, color: "#FFD6A5" },
-            { level: 6, name: "Melodi Takibi", targetLength: 6, speed: 450, color: "#FFD6A5" },
-            { level: 7, name: "Konsantrasyon", targetLength: 7, speed: 400, color: "#D8BBFF" },
-            { level: 8, name: "Derin Ritim", targetLength: 7, speed: 350, color: "#D8BBFF" },
-            { level: 9, name: "Ritim Üstadı", targetLength: 8, speed: 300, color: "#FFADAD" },
-            { level: 10, name: "Efsane Ritimci", targetLength: 10, speed: 250, color: "#FFC6FF" }
+            { level: 1, name: "Pembe & Safir Işıltısı", tileCount: 4, targetLength: 4, speed: 650, color: "#CAFFBF" },
+            { level: 2, name: "Kristal Başlangıç", tileCount: 4, targetLength: 5, speed: 600, color: "#CAFFBF" },
+            { level: 3, name: "Zümrüt Sürprizi", tileCount: 5, targetLength: 5, speed: 550, color: "#A0C4FF" },
+            { level: 4, name: "Işıl Işıl Kareler", tileCount: 5, targetLength: 6, speed: 500, color: "#A0C4FF" },
+            { level: 5, name: "Galaksi Ritiği", tileCount: 6, targetLength: 6, speed: 450, color: "#FFD6A5" },
+            { level: 6, name: "Simli Şenlik", tileCount: 6, targetLength: 7, speed: 400, color: "#FFD6A5" },
+            { level: 7, name: "Gül Altın & Turkuaz", tileCount: 8, targetLength: 7, speed: 350, color: "#D8BBFF" },
+            { level: 8, name: "Derin Kristal Ritim", tileCount: 8, targetLength: 8, speed: 300, color: "#D8BBFF" },
+            { level: 9, name: "Pırlanta Dünyası", tileCount: 9, targetLength: 8, speed: 270, color: "#FFADAD" },
+            { level: 10, name: "Büyük 3D Kristal Şampiyonu", tileCount: 9, targetLength: 10, speed: 240, color: "#FFC6FF" }
         ];
 
         const cfg = LEVELS[levelNumber - 1];
-        const colors = [
-            { id: 0, color: "red", hex: "#f87171", lightHex: "#fca5a5" },
-            { id: 1, color: "blue", hex: "#60a5fa", lightHex: "#93c5fd" },
-            { id: 2, color: "green", hex: "#4ade80", lightHex: "#86efac" },
-            { id: 3, color: "yellow", hex: "#facc15", lightHex: "#fde047" }
-        ];
+        const activeTiles = SPARKLE_TILES.slice(0, cfg.tileCount);
 
         let sequence = [];
         let playerIndex = 0;
@@ -4113,33 +5168,54 @@ document.addEventListener("DOMContentLoaded", () => {
             return '<button class="level-tab ' + (l.level === levelNumber ? 'active' : '') + '" data-level="' + l.level + '" ' + (isUnlocked ? '' : 'disabled style="opacity:0.5; cursor:not-allowed;"') + '>' + (isUnlocked ? l.level : '🔒') + '</button>';
         }).join('');
 
+        let gridCols = 2;
+        let maxW = "310px";
+        if (cfg.tileCount === 5 || cfg.tileCount === 6) {
+            gridCols = 3;
+            maxW = "350px";
+        } else if (cfg.tileCount === 8) {
+            gridCols = 4;
+            maxW = "380px";
+        } else if (cfg.tileCount === 9) {
+            gridCols = 3;
+            maxW = "350px";
+        }
+
         container.innerHTML = `
-            <div class="rhythmic-memory-game" style="text-align:center; padding:10px 0; user-select:none;">
-                <div class="level-tabs">${tabsHTML}</div>
-                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:rgba(0,0,0,0.03); padding:10px 15px; border-radius:16px;">
-                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                        Seviye ${cfg.level}: <span style="color:var(--color-primary);">${cfg.name}</span>
+            <div class="rhythmic-memory-game" style="text-align:center; padding:8px 0; user-select:none; font-family:var(--font-main);">
+                <div class="level-tabs" style="display:flex; gap:6px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px;">${tabsHTML}</div>
+                
+                <div class="game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:rgba(248,250,252,0.92); padding:10px 16px; border-radius:16px; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+                    <div style="text-align:left;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Svy ${cfg.level} (${cfg.tileCount} Simli Kare)</span>
+                        <div style="font-weight:800; font-size:1.02rem; color:var(--color-primary);">${cfg.name}</div>
                     </div>
-                    <div class="game-lives" style="display:flex; gap:4px;">
+                    
+                    <div class="game-lives" style="display:flex; gap:4px; background:#fee2e2; padding:5px 10px; border-radius:12px; border:1px solid #fca5a5;">
                         <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
                         <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
                         <i class="heart-icon" data-lucide="heart" style="fill:#ef4444; color:#ef4444; width:18px; height:18px;"></i>
                     </div>
-                    <div style="font-weight:700; color:var(--text-main); font-size:0.85rem;">
-                        Uzunluk: <span id="rhythm-progress" style="color:#D97706;">0</span>/${cfg.targetLength}
+
+                    <div style="font-weight:800; color:#d97706; background:#fef3c7; padding:5px 10px; border-radius:12px; border:1px solid #fde68a; font-size:0.88rem;">
+                        🎯 <span id="rhythm-progress">0</span>/${cfg.targetLength}
                     </div>
                 </div>
 
-                <div id="rhythm-prompt" style="margin-bottom:20px; font-weight:800; font-size:1.1rem; color:var(--text-main); min-height:24px;">
-                    Hazırlan... 🥁
+                <div id="rhythm-prompt" style="margin-bottom:14px; font-weight:800; font-size:1.15rem; color:var(--text-main); min-height:28px; background:rgba(255,255,255,0.7); padding:6px 14px; border-radius:14px; border:1px solid #e2e8f0; display:inline-block;">
+                    Hazırlan... ✨💎
                 </div>
 
-                <div class="simon-board" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; max-width:260px; margin:0 auto 10px;">
-                    ${colors.map(c => `
-                        <button class="simon-pad" data-id="${c.id}" style="aspect-ratio:1; background:${c.hex}; border:4px solid rgba(0,0,0,0.1); border-radius:24px; cursor:pointer; transition:all 0.1s ease; box-shadow:var(--shadow-medium);"></button>
+                <div class="simon-board" style="display:grid; grid-template-columns: repeat(${gridCols}, 1fr); gap:14px; max-width:${maxW}; margin:0 auto 14px;">
+                    ${activeTiles.map(t => `
+                        <button class="simon-pad" data-id="${t.id}" style="aspect-ratio:1; background:${t.bg}; border:4px solid ${t.border}; border-bottom:7px solid rgba(0,0,0,0.3); border-radius:24px; cursor:pointer; transition:transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s; box-shadow:0 10px 24px ${t.shadow}, inset 0 3px 6px rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                            <div style="position:absolute; inset:0; background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55) 0%, transparent 60%), repeating-linear-gradient(45deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.12) 3px, transparent 3px, transparent 6px); pointer-events:none;"></div>
+                            ${render3DCrystalGemSVG(t)}
+                        </button>
                     `).join('')}
                 </div>
-                <button class="btn btn-locked" id="btn-give-up" style="width:100%; font-size:0.82rem; margin-top:12px;">
+
+                <button class="btn btn-locked" id="btn-give-up" style="width:100%; font-size:0.85rem; padding:8px 14px; border-radius:12px;">
                     🏳️ Vazgeç & Kapat
                 </button>
             </div>
@@ -4213,7 +5289,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         setTimeout(() => {
                             addNewStep();
                             showSequence();
-                        }, 1000);
+                        }, 900);
                     }
                 }
             } else {
@@ -4225,7 +5301,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     endGame(false);
                 } else {
                     gameActive = false;
-                    promptEl.innerText = "Hata! Tekrar izle... 👀";
+                    promptEl.innerText = "Hata! Tekrar İzle... ✨👀";
                     setTimeout(() => {
                         playerIndex = 0;
                         showSequence();
@@ -4241,25 +5317,73 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        const CRYSTAL_FREQUENCIES = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33];
+
+        function playCrystalTone(id) {
+            if (!isSoundEnabled) return;
+            try {
+                initAudio();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const freq = CRYSTAL_FREQUENCIES[id % CRYSTAL_FREQUENCIES.length] || 440;
+                const now = audioCtx.currentTime;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                const overtone = audioCtx.createOscillator();
+                const overtoneGain = audioCtx.createGain();
+                overtone.type = 'triangle';
+                overtone.frequency.setValueAtTime(freq * 2.0, now);
+
+                osc.connect(gain);
+                overtone.connect(overtoneGain);
+                gain.connect(audioCtx.destination);
+                overtoneGain.connect(audioCtx.destination);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+                overtoneGain.gain.setValueAtTime(0.08, now);
+                overtoneGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+                osc.start(now);
+                overtone.start(now);
+                osc.stop(now + 0.38);
+                overtone.stop(now + 0.38);
+            } catch (e) {
+                console.log("Crystal tone play error:", e);
+            }
+        }
+
         function flashPad(pad, id) {
-            const c = colors[id];
-            playSound('click');
-            pad.style.background = c.lightHex;
-            pad.style.transform = "scale(0.96)";
+            const t = SPARKLE_TILES.find(item => item.id === id);
+            if (!t || !pad) return;
+
+            playCrystalTone(id);
+            pad.style.transform = "translateY(-8px) scale(1.12)";
+            pad.style.border = "4px solid #ffffff";
+            pad.style.boxShadow = `0 16px 36px ${t.shadow}, 0 0 35px ${t.glow}, inset 0 0 20px rgba(255,255,255,0.95)`;
+
             setTimeout(() => {
-                pad.style.background = c.hex;
                 pad.style.transform = "";
-            }, 250);
+                pad.style.border = `4px solid ${t.border}`;
+                pad.style.boxShadow = `0 10px 24px ${t.shadow}, inset 0 3px 6px rgba(255,255,255,0.7)`;
+            }, 280);
         }
 
         function addNewStep() {
-            const randomId = Math.floor(Math.random() * 4);
-            sequence.push(randomId);
+            const randomIdx = Math.floor(Math.random() * activeTiles.length);
+            sequence.push(activeTiles[randomIdx].id);
         }
 
         function showSequence() {
             isShowingSequence = true;
-            promptEl.innerText = "İZLE VE DİNLE... 👂";
+            promptEl.innerText = "İZLE VE DİNLE... ✨👂";
             playerIndex = 0;
 
             let idx = 0;
@@ -4270,17 +5394,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (idx < sequence.length) {
-                    const padId = sequence[idx];
-                    const pad = container.querySelector('[data-id="' + padId + '"]');
-                    flashPad(pad, padId);
+                    const tileId = sequence[idx];
+                    const pad = container.querySelector('[data-id="' + tileId + '"]');
+                    flashPad(pad, tileId);
                     idx++;
                 } else {
                     clearInterval(sequenceInterval);
                     isShowingSequence = false;
-                    promptEl.innerText = "ŞİMDİ SEN DENE! 🫵";
+                    promptEl.innerText = "ŞİMDİ SEN DENE! 🫵✨";
                     gameActive = true;
                 }
-            }, cfg.speed + 200);
+            }, cfg.speed + 180);
         }
 
         function endGame(isWin) {
@@ -4289,8 +5413,8 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (isWin) {
                 unlockNextLevel(10, levelNumber);
-                playSound('success');
-                const scoreAwarded = cfg.level * 100 + (lives * 40);
+                playSound('win');
+                const scoreAwarded = cfg.level * 120 + (lives * 40);
                 const starsAwarded = lives === 3 ? 25 : (lives === 2 ? 15 : 10);
 
                 const ach = window.achievementsData;
@@ -4306,15 +5430,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
-                        <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">🧠🥁🏆</div>
-                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:700; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 Ritim Ustası!</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px;">Seviye ${levelNumber} Tamamlandı!</h2>
+                        <div style="text-align:center; padding:16px 8px; font-family:var(--font-main);">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:bounce-loop 2s infinite ease-in-out;">💎🏆✨</div>
+                            <div style="display:inline-block; padding:6px 18px; border-radius:999px; background:${cfg.color}; font-weight:800; font-size:0.95rem; color:#1F2937; margin-bottom:10px;">🌟 3D Kristal Ustası!</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; font-weight:800; color:var(--color-primary);">Seviye ${levelNumber} Tamamlandı!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Örüntüyü başarıyla tamamladın ve <strong>${lives} canını</strong> korudun!
+                                <strong>${cfg.name}</strong> 3D kristal ritmini mükemmel hatırladın!
                             </p>
                             
                             <div style="display:flex; justify-content:center; gap:14px; margin-bottom:22px;">
@@ -4329,9 +5458,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px;">🔄 Tekrar Oyna</button>
-                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
-                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px;">✅ Kaydet & Kapat</button>
+                                <button class="btn btn-success" id="btn-replay" style="flex:1; min-width:120px; font-weight:800;">🔄 Tekrar Oyna</button>
+                                ${levelNumber < 10 ? `<button class="btn btn-primary" id="btn-next-level" style="flex:1; min-width:120px; font-weight:800;">➡️ Seviye ${levelNumber + 1}</button>` : ''}
+                                <button class="btn btn-locked" id="btn-finish-win" style="flex:1; min-width:120px; font-weight:700;">✅ Kapat</button>
                             </div>
                         </div>
                     `;
@@ -4355,19 +5484,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             } else {
                 lockGame(10);
-                playSound('locked');
+                playSound('fail');
                 setTimeout(() => {
                     container.innerHTML = `
-                        <div style="text-align:center; padding:16px 8px;">
-                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">😢💥🥁</div>
-                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444;">Oyun Bitti!</h2>
+                        <div style="text-align:center; padding:16px 8px; font-family:var(--font-main);">
+                            <div style="font-size:4.5rem; margin-bottom:12px; animation:shake 0.5s ease-in-out;">💔💎✨</div>
+                            <h2 style="font-size:1.6rem; margin-bottom:6px; color:#ef4444; font-weight:800;">Oyun Bitti!</h2>
                             <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:18px;">
-                                Ritimleri karıştırdın ve canların tükendi. 1 global can kaybettin!
+                                Kristal ritmini karıştırdın. Pes etme, tekrar dene!
                             </p>
                             
                             <div style="display:flex; gap:10px; justify-content:center;">
-                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px;">🔄 Tekrar Dene</button>
-                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px;">❌ Kapat</button>
+                                <button class="btn btn-primary" id="btn-replay-fail" style="padding:10px 24px; font-weight:800;">🔄 Tekrar Dene</button>
+                                <button class="btn btn-locked" id="btn-close-fail" style="padding:10px 24px; font-weight:700;">❌ Kapat</button>
                             </div>
                         </div>
                     `;
@@ -4384,20 +5513,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        let countdown = 3;
-        promptEl.innerText = `Hazırlan: ${countdown}`;
-        countInterval = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                promptEl.innerText = `Hazırlan: ${countdown}`;
-                playSound('click');
-            } else {
-                clearInterval(countInterval);
-                gameActive = true;
-                addNewStep();
-                showSequence();
-            }
-        }, 1000);
+        // Başlangıç Dizilimi
+        setTimeout(() => {
+            addNewStep();
+            showSequence();
+        }, 800);
     }
     // ============================================================
     // GİZLİ OBJE AVI (OYUN 11) OYUN MOTORU
@@ -4617,6 +5737,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -4897,6 +6022,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const done = ach.dailyTasks.filter(t => t.completed).length;
                 ach.userStats.progressPercentage = Math.round((done / ach.dailyTasks.length) * 100);
+        if (typeof scoreAwarded !== 'undefined' && window.CURRENT_ACTIVE_GAME_ID) {
+            if(window.recordGameScore) window.recordGameScore(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+            if(window.achievementsData && window.achievementsData.addScoreToGame) window.achievementsData.addScoreToGame(window.CURRENT_ACTIVE_GAME_ID, scoreAwarded);
+        }
+        if(window.achievementsData && window.achievementsData.saveAchievements) window.achievementsData.saveAchievements();
 
                 setTimeout(() => {
                     container.innerHTML = `
@@ -5015,4 +6145,80 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCategories();
     filterAndRenderGames();
     renderAchievements();
+    updatePlayerProfileUI();
+
+    // İlk Girişte İsim ve Karakter Seçim Ekranı Açılışı
+    if (!localStorage.getItem('user_profile_setup')) {
+        setTimeout(() => {
+            openAvatarSelectionModal(true);
+        }, 500);
+    }
+
+    // Kategori Linkleri (Footer)
+    const categoryLinks = document.querySelectorAll('.category-link');
+    categoryLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const cat = link.getAttribute('data-category');
+            activeCategory = cat;
+            
+            renderCategories(); 
+            filterAndRenderGames();
+        });
+    });
+
+    // Destek & Bilgi Linkleri (Footer)
+    const infoLinks = document.querySelectorAll('.info-link');
+    infoLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const infoType = link.getAttribute('data-info');
+            openInfoModal(infoType);
+        });
+    });
+
+    function openInfoModal(type) {
+        let title = "";
+        let content = "";
+        
+        switch(type) {
+            case 'sss':
+                title = "Sıkça Sorulan Sorular";
+                content = "<div style='padding:15px;'><p style='margin-bottom:20px; font-size:1.05rem; color:var(--text-main); line-height:1.5; font-weight:500;'>Aklınıza takılan soruların yanıtlarını sizin için aşağıda derledik. Daha fazlası için iletişim bölümünden bize ulaşabilirsiniz.</p><h4 style='color:#6366f1; margin-bottom:5px;'>1. Oyunlar ücretli mi?</h4><p style='margin-bottom:15px; color:var(--text-muted);'>Hayır, MİNİKİO platformundaki tüm oyunlar tamamen ücretsizdir.</p><h4 style='color:#6366f1; margin-bottom:5px;'>2. Nasıl yıldız kazanırım?</h4><p style='margin-bottom:15px; color:var(--text-muted);'>Oyunları tamamlayarak ve günlük görevleri yerine getirerek yıldız ve puan kazanabilirsiniz.</p><h4 style='color:#6366f1; margin-bottom:5px;'>3. İlerlemem nasıl kaydediliyor?</h4><p style='color:var(--text-muted);'>İlerlemeniz ve topladığınız yıldızlar tarayıcınızın hafızasında güvenle saklanmaktadır.</p></div>";
+                break;
+            case 'terms':
+                title = "Kullanım Şartları";
+                content = "<div style='padding:15px;'><p style='margin-bottom:10px; color:var(--text-muted);'>MİNİKİO'yu kullanarak aşağıdaki şartları kabul etmiş sayılırsınız:</p><ul style='list-style:disc; margin-left:20px; color:var(--text-muted); line-height:1.6;'><li>MİNİKİO'daki tüm grafikler ve oyun kodları platforma aittir, kopyalanamaz.</li><li>Platform tamamen eğitsel amaçlıdır.</li><li>Kullanıcılar birbirleriyle rekabet ederken platformun kurallarına uymak zorundadır.</li></ul></div>";
+                break;
+            case 'privacy':
+                title = "Gizlilik Politikası";
+                content = "<div style='padding:15px;'><p style='color:var(--text-muted); line-height:1.6;'>MİNİKİO olarak gizliliğinize büyük önem veriyoruz. Herhangi bir kişisel verinizi toplamıyor, saklamıyor veya üçüncü şahıslarla paylaşmıyoruz. Tüm ilerlemeniz ve başarı rozetleriniz sadece sizin cihazınızda (tarayıcı belleğinde) yerel olarak saklanmaktadır.</p></div>";
+                break;
+            case 'contact':
+                title = "İletişim";
+                content = "<div style='padding:15px; text-align:center;'><div style='font-size:3rem; margin-bottom:10px;'>💌</div><p style='color:var(--text-muted); line-height:1.6; margin-bottom:15px;'>Soru, görüş ve önerileriniz için bizimle dilediğiniz zaman iletişime geçebilirsiniz.</p><p style='font-weight:bold; font-size:1.1rem; color:#6366f1;'>E-Posta: destek@zekadiyari.com</p></div>";
+                break;
+        }
+        
+        modalTitle.textContent = title;
+        modalBody.innerHTML = content;
+        
+        modalOverlay.style.display = "flex";
+        requestAnimationFrame(() => {
+            modalOverlay.style.opacity = "1";
+        });
+    }
+
+    // Gerçek zamanlı UI güncellemesi
+    window.addEventListener('achievementsUpdated', () => {
+        if (typeof activeCategory !== 'undefined') {
+            if (activeCategory === 'ACHIEVEMENTS' && typeof renderAchievementsCategoryView === 'function') {
+                renderAchievementsCategoryView();
+            } else if (activeCategory === 'LEADERBOARD' && typeof renderLeaderboardDashboard === 'function') {
+                renderLeaderboardDashboard();
+            }
+        }
+        if (typeof updateChampionBanner === 'function') {
+            updateChampionBanner();
+        }
+    });
 });
