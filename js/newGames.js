@@ -3422,11 +3422,15 @@ window.startBlockBlastGame = function(container, levelNumber) {
         if (clientX === undefined || clientY === undefined) return;
 
         clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-        clone.style.top = (clientY - clone.offsetHeight - 40) + 'px'; // Parmak altında kaybolmaması için yukarı kaydır
+        clone.style.top = (clientY - clone.offsetHeight/2) + 'px'; // Blok tam parmağın altında
 
-        // Find cell under finger
-        const els = document.elementsFromPoint(clientX, clientY);
-        const cellEl = els.find(el => el.classList.contains('bb-board-cell'));
+        // Find cell slightly ABOVE finger (ışık erken gitsin)
+        const targetY = clientY - 80;
+        let cellEl = null;
+        if (targetY > 0) {
+            const els = document.elementsFromPoint(clientX, targetY);
+            cellEl = els.find(el => el.classList.contains('bb-board-cell'));
+        }
         
         if (cellEl) {
             const targetR = parseInt(cellEl.dataset.row);
@@ -3438,15 +3442,16 @@ window.startBlockBlastGame = function(container, levelNumber) {
                 state.lastPreviewR = topLeftR;
                 state.lastPreviewC = topLeftC;
                 const fits = updatePreview(topLeftR, topLeftC);
-                if (fits === true || fits === false) {
-                    clone.style.opacity = '0'; // Sadece ışık görünsün, blok gizlensin
+                if (fits === true) {
+                    clone.style.filter = 'drop-shadow(0 0 15px rgba(74, 222, 128, 0.9))';
+                } else if (fits === false) {
+                    clone.style.filter = 'drop-shadow(0 0 15px rgba(248, 113, 113, 0.9))';
                 }
             }
         } else {
             state.lastPreviewR = null;
             state.lastPreviewC = null;
             clearBoardPreviews();
-            clone.style.opacity = '1'; // Tahta dışındaysa bloğu tekrar göster
             clone.style.filter = 'none';
         }
     }
@@ -3723,7 +3728,7 @@ window.startBlockBlastGame = function(container, levelNumber) {
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             if (clientX !== undefined) {
                 clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-                clone.style.top = (clientY - clone.offsetHeight - 40) + 'px';
+                clone.style.top = (clientY - clone.offsetHeight/2) + 'px'; // Blok tam parmak hizasında başlasın
             }
             
             slotEl.style.opacity = '0.2'; // fade original
