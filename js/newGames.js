@@ -3422,7 +3422,7 @@ window.startBlockBlastGame = function(container, levelNumber) {
         if (clientX === undefined || clientY === undefined) return;
 
         clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-        clone.style.top = (clientY - clone.offsetHeight/2) + 'px';
+        clone.style.top = (clientY - clone.offsetHeight - 40) + 'px'; // Parmak altında kaybolmaması için yukarı kaydır
 
         // Find cell under finger
         const els = document.elementsFromPoint(clientX, clientY);
@@ -3724,7 +3724,7 @@ window.startBlockBlastGame = function(container, levelNumber) {
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             if (clientX !== undefined) {
                 clone.style.left = (clientX - clone.offsetWidth/2) + 'px';
-                clone.style.top = (clientY - clone.offsetHeight/2) + 'px';
+                clone.style.top = (clientY - clone.offsetHeight - 40) + 'px';
             }
             
             slotEl.style.opacity = '0.2'; // fade original
