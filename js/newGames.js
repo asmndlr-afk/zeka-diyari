@@ -2784,9 +2784,16 @@ window.startRhythmDanceGame = function(container, levelNumber) {
     }
 
     function playPianoNote(frequency) {
-        if (!window.AudioContext && !window.webkitAudioContext) return;
+        if (!window.rhythmAudioCtx) {
+            if (window.AudioContext || window.webkitAudioContext) {
+                window.rhythmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } else {
+                return;
+            }
+        }
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = window.rhythmAudioCtx;
+            if (ctx.state === 'suspended') ctx.resume();
             const now = ctx.currentTime;
             
             const osc1 = ctx.createOscillator();
