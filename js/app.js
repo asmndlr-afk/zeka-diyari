@@ -322,13 +322,21 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         });
 
-        contentHTML += `
-                </div>
-
                 <!-- Save / Start Button -->
                 <button id="btn-save-profile" type="button" style="width: 100%; max-width: 320px; margin-top: 20px; padding: 14px; border-radius: 18px; font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #f43f5e, #e11d48); border: none; color: white; box-shadow: 0 8px 20px rgba(244,63,94,0.45); cursor: pointer; transition: transform 0.15s ease;">
                     🚀 Kaydet ve Maceraya Başla!
                 </button>
+        `;
+
+        if (!isFirstTime) {
+            contentHTML += `
+                <button id="btn-delete-account" type="button" style="width: 100%; max-width: 320px; margin-top: 12px; padding: 12px; border-radius: 14px; font-size: 1rem; font-weight: 800; background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; color: #ef4444; cursor: pointer; transition: all 0.15s ease;">
+                    🗑️ Hesabı Sil ve Sıfırla
+                </button>
+            `;
+        }
+
+        contentHTML += `
             </div>
         `;
 
@@ -376,6 +384,17 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             saveBtn.addEventListener('click', handleSave);
+        }
+
+        const deleteBtn = modalContainer.querySelector('#btn-delete-account');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm("Tüm oyun kayıtların, yıldızların ve başarıların kalıcı olarak silinecek. Hesabını sıfırlamak istediğine emin misin?")) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            });
         }
     }
 
